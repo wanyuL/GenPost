@@ -3,6 +3,32 @@ layout: default
 skip_mathjax: true
 ---
 
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      macros: {
+        datacolor: ['{\\color{teal}{#1}}', 1],
+        modelcolor: ['{\\color{peru}{#1}}', 1],
+        targetcolor: ['{\\color{slateblue}{#1}}', 1],
+        datasetcolor: ['{\\color{steelblue}{#1}}', 1]
+      }
+    },
+    chtml: {
+      scale: 1.0
+    },
+    startup: {
+      ready: () => {
+        MathJax.startup.defaultReady();
+        console.log('MathJax is ready');
+        window.mathJaxReady = true;
+      }
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 <style>
   .post-shell {
     max-width: 920px;
@@ -43,6 +69,20 @@ skip_mathjax: true
     color: #777;
     padding-left: 36px;
   }
+
+  .section-body {
+    margin: 22px 0 0;
+    font-size: 1.08rem;
+    line-height: 1.75;
+    color: #2a2a2a;
+  }
+
+  .section-equation {
+    margin: 28px 0 0;
+    padding-left: 36px;
+    color: #111;
+    font-size: 1.2rem;
+  }
 </style>
 
 <div class="post-shell">
@@ -51,6 +91,10 @@ skip_mathjax: true
   <section class="post-section">
     <h2 class="section-title">Generalization overview</h2>
     <p class="section-subtitle">how neural networks predict unseen data</p>
+    <p class="section-body">Generalization error as a function of data, model, and target:</p>
+    <div class="section-equation">
+      $$\mathcal{E}_g = \left\langle \frac{1}{2} \int d\mathbf{x}\, \underbrace{\datacolor{p}(\mathbf{x})\vphantom{\dfrac{1}{1}}}_{\substack{\\[6pt]\datacolor{\text{test data}}\\\datacolor{\text{distribution}}}} \bigl(\underbrace{\modelcolor{f^*}(\mathbf{x})\vphantom{\dfrac{1}{1}}}_{\substack{\\[6pt]\modelcolor{\text{model}}}} - \underbrace{\targetcolor{f_T}(\mathbf{x})\vphantom{\dfrac{1}{1}}}_{\substack{\\[6pt]\targetcolor{\text{target}}}}\bigr)^2 \right\rangle\mkern-20mu \raise -30mu \hbox{$\scriptstyle \underbrace{\datasetcolor{\mathscr{D}}}_{\substack{\datasetcolor{\text{train}}\\\datasetcolor{\text{dataset}}}}$}$$
+    </div>
   </section>
 
   <section class="post-section">
