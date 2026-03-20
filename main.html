@@ -162,6 +162,39 @@ skip_mathjax: true
     letter-spacing: 0.02em;
   }
 
+  .plot-figure-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+    margin-top: 26px;
+    padding-top: 26px;
+    border-top: 1px solid #e5e5e5;
+  }
+
+  .plot-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .plot-frame {
+    position: relative;
+    width: min(100%, 340px);
+    height: 300px;
+    border: 1px solid #d7d7d7;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+    overflow: hidden;
+  }
+
+  .plot-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
   @media (max-width: 720px) {
     .post-shell {
       padding-left: 20px;
@@ -179,6 +212,11 @@ skip_mathjax: true
     }
 
     .network-figure-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .plot-figure-grid {
       grid-template-columns: 1fr;
       gap: 24px;
     }
@@ -216,7 +254,7 @@ skip_mathjax: true
             <title id="network-diagram-title">Neural network diagram</title>
             <desc id="network-diagram-desc">A fully connected neural network with a tunable number of hidden layers.</desc>
           </svg>
-          <p class="network-caption">Neural representation with adjustable depth</p>
+          <p class="network-caption">Wide MLP in Neural Space</p>
         </div>
         <div class="network-panel">
           <div class="feature-panel-spacer" aria-hidden="true"></div>
@@ -224,7 +262,21 @@ skip_mathjax: true
             <title id="feature-diagram-title">Feature space representation diagram</title>
             <desc id="feature-diagram-desc">A static feature-space representation mapping an input block to features and a single output.</desc>
           </svg>
-          <p class="network-caption">Feature space representation</p>
+          <p class="network-caption">Wide MLP in Feature (Eigenfunction) Space</p>
+        </div>
+      </div>
+      <div class="plot-figure-grid">
+        <div class="plot-panel">
+          <div class="plot-frame">
+            <canvas class="plot-canvas" id="ntk-matrix-plot" aria-label="Infinite-width NTK matrix on the unit circle"></canvas>
+          </div>
+          <p class="network-caption">Infinite-Width NTK Matrix on the Unit Circle</p>
+        </div>
+        <div class="plot-panel">
+          <div class="plot-frame">
+            <canvas class="plot-canvas" id="ntk-spectrum-plot" aria-label="Sorted NTK eigenspectrum on log-log axes"></canvas>
+          </div>
+          <p class="network-caption">Sorted NTK Eigenspectrum in Log-Log Scale</p>
         </div>
       </div>
     </div>
@@ -242,9 +294,18 @@ skip_mathjax: true
     const value = document.getElementById('hidden-layer-value');
     const svg = document.getElementById('network-diagram');
     const featureSvg = document.getElementById('feature-diagram');
-    if (!slider || !value || !svg || !featureSvg) return;
+    const matrixCanvas = document.getElementById('ntk-matrix-plot');
+    const spectrumCanvas = document.getElementById('ntk-spectrum-plot');
+    if (!slider || !value || !svg || !featureSvg || !matrixCanvas || !spectrumCanvas) return;
 
     const svgNs = 'http://www.w3.org/2000/svg';
+    const plotConfig = {
+      samples: 96,
+      inputDim: 2,
+      weightVar: 2,
+      biasVar: 0.01
+    };
+
     function makeNode(x, y, stroke) {
       const circle = document.createElementNS(svgNs, 'circle');
       circle.setAttribute('cx', x);
@@ -389,6 +450,343 @@ skip_mathjax: true
       featureSvg.appendChild(labelGroup);
     }
 
+    function createMatrix(size, fill = 0) {
+      return Array.from({ length: size }, () => Array(size).fill(fill));
+    }
+
+    function clip(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function viridisColor(t) {
+      const stops = [
+        [68, 1, 84],
+        [59, 82, 139],
+        [33, 145, 140],
+        [94, 201, 98],
+        [253, 231, 37]
+      ];
+      const clamped = clip(t, 0, 1);
+      const scaled = clamped * (stops.length - 1);
+      const index = Math.min(stops.length - 2, Math.floor(scaled));
+      const frac = scaled - index;
+      const start = stops[index];
+      const end = stops[index + 1];
+      const rgb = start.map((channel, channelIndex) =>
+        Math.round(channel + (end[channelIndex] - channel) * frac)
+      );
+      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    }
+
+    function reluKernel(covariance, diagonal) {
+      const size = covariance.length;
+      const activated = createMatrix(size);
+      const derivative = createMatrix(size);
+
+      for (let i = 0; i < size; i += 1) {
+        for (let j = 0; j < size; j += 1) {
+          const q1 = Math.max(diagonal[i], 1e-12);
+          const q2 = Math.max(diagonal[j], 1e-12);
+          const denom = Math.sqrt(q1 * q2);
+          const rho = clip(covariance[i][j] / denom, -1, 1);
+          const theta = Math.acos(rho);
+          activated[i][j] = denom * (Math.sin(theta) + (Math.PI - theta) * Math.cos(theta)) / (2 * Math.PI);
+          derivative[i][j] = (Math.PI - theta) / (2 * Math.PI);
+        }
+      }
+
+      return { activated, derivative };
+    }
+
+    function computeInfiniteWidthNtk(hiddenLayers) {
+      const { samples, inputDim, weightVar, biasVar } = plotConfig;
+      const angles = Array.from({ length: samples }, (_, index) => (2 * Math.PI * index) / samples);
+      const inputKernel = createMatrix(samples);
+
+      for (let i = 0; i < samples; i += 1) {
+        for (let j = 0; j < samples; j += 1) {
+          inputKernel[i][j] = Math.cos(angles[i] - angles[j]) / inputDim;
+        }
+      }
+
+      let featureCovariance = inputKernel.map((row) => row.slice());
+      let ntk = inputKernel.map((row) => row.slice());
+
+      for (let layer = 0; layer < hiddenLayers; layer += 1) {
+        const preActivation = createMatrix(samples);
+        const diagonal = Array(samples);
+
+        for (let i = 0; i < samples; i += 1) {
+          for (let j = 0; j < samples; j += 1) {
+            preActivation[i][j] = weightVar * featureCovariance[i][j] + biasVar;
+          }
+          diagonal[i] = preActivation[i][i];
+        }
+
+        const { activated, derivative } = reluKernel(preActivation, diagonal);
+        const nextNtk = createMatrix(samples);
+
+        for (let i = 0; i < samples; i += 1) {
+          for (let j = 0; j < samples; j += 1) {
+            nextNtk[i][j] = activated[i][j] + weightVar * derivative[i][j] * ntk[i][j];
+          }
+        }
+
+        featureCovariance = activated;
+        ntk = nextNtk;
+      }
+
+      const outputKernel = createMatrix(samples);
+      for (let i = 0; i < samples; i += 1) {
+        for (let j = 0; j < samples; j += 1) {
+          outputKernel[i][j] = ntk[i][j] + featureCovariance[i][j];
+        }
+      }
+
+      const normalizedRow = outputKernel[0].map((entry) => entry / outputKernel[0][0] / samples);
+      const eigenvalues = angles.map((angle, mode) =>
+        normalizedRow.reduce((sum, value, index) => sum + value * Math.cos(mode * angles[index]), 0)
+      );
+      const sortedEigenvalues = eigenvalues.slice().sort((a, b) => b - a);
+
+      return {
+        matrix: outputKernel,
+        sortedEigenvalues
+      };
+    }
+
+    function setupCanvas(canvas) {
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(320, Math.round(canvas.clientWidth));
+      const height = Math.max(220, Math.round(canvas.clientHeight));
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      const context = canvas.getContext('2d');
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+      return { context, width, height };
+    }
+
+    function drawAxisLabel(context, text, x, y, rotation = 0) {
+      context.save();
+      context.translate(x, y);
+      context.rotate(rotation);
+      context.fillText(text, 0, 0);
+      context.restore();
+    }
+
+    function toSuperscript(text) {
+      const map = {
+        '-': '⁻',
+        '0': '⁰',
+        '1': '¹',
+        '2': '²',
+        '3': '³',
+        '4': '⁴',
+        '5': '⁵',
+        '6': '⁶',
+        '7': '⁷',
+        '8': '⁸',
+        '9': '⁹',
+        '.': '.'
+      };
+      return String(text).split('').map((char) => map[char] ?? char).join('');
+    }
+
+    function formatShortNumber(value, digits = 1) {
+      const rounded = Number(value.toFixed(digits));
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    }
+
+    function drawNtkMatrix(matrix) {
+      const { context, width, height } = setupCanvas(matrixCanvas);
+      const padding = { top: 28, right: 62, bottom: 44, left: 62 };
+      const availableWidth = width - padding.left - padding.right;
+      const availableHeight = height - padding.top - padding.bottom;
+      const size = matrix.length;
+      const colorBarWidth = 14;
+      const colorBarGap = 10;
+      const heatmapSize = Math.min(availableHeight, availableWidth - colorBarWidth - colorBarGap);
+      const contentWidth = heatmapSize + colorBarGap + colorBarWidth;
+      const heatmapLeft = padding.left + (availableWidth - contentWidth) / 2;
+      const heatmapTop = padding.top + (availableHeight - heatmapSize) / 2;
+
+      let min = Infinity;
+      let max = -Infinity;
+      for (const row of matrix) {
+        for (const value of row) {
+          min = Math.min(min, value);
+          max = Math.max(max, value);
+        }
+      }
+      const span = Math.max(max - min, 1e-12);
+      const cellWidth = heatmapSize / size;
+      const cellHeight = heatmapSize / size;
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, width, height);
+
+      for (let row = 0; row < size; row += 1) {
+        for (let column = 0; column < size; column += 1) {
+          const normalized = (matrix[row][column] - min) / span;
+          context.fillStyle = viridisColor(normalized);
+          context.fillRect(
+            heatmapLeft + column * cellWidth,
+            heatmapTop + row * cellHeight,
+            Math.ceil(cellWidth) + 0.5,
+            Math.ceil(cellHeight) + 0.5
+          );
+        }
+      }
+
+      context.strokeStyle = '#111';
+      context.lineWidth = 1.15;
+      context.strokeRect(heatmapLeft, heatmapTop, heatmapSize, heatmapSize);
+
+      const colorBarX = heatmapLeft + heatmapSize + colorBarGap;
+      for (let pixel = 0; pixel < heatmapSize; pixel += 1) {
+        const normalized = 1 - pixel / Math.max(heatmapSize - 1, 1);
+        context.fillStyle = viridisColor(normalized);
+        context.fillRect(colorBarX, heatmapTop + pixel, colorBarWidth, 1.5);
+      }
+      context.strokeRect(colorBarX, heatmapTop, colorBarWidth, heatmapSize);
+
+      const axisBottom = heatmapTop + heatmapSize;
+
+      context.fillStyle = '#4b4b4b';
+      context.font = '13px Georgia, serif';
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('sampled train data index', heatmapLeft + heatmapSize / 2, axisBottom + 26);
+
+      context.save();
+      context.translate(18, heatmapTop + heatmapSize / 2);
+      context.rotate(-Math.PI / 2);
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('sampled train data index', 0, 0);
+      context.restore();
+
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      [0, Math.floor(size / 2), size - 1].forEach((tick) => {
+        const x = heatmapLeft + (tick / (size - 1)) * heatmapSize;
+        const y = heatmapTop + (tick / (size - 1)) * heatmapSize;
+        context.fillText(String(tick + 1), x, axisBottom + 10);
+        context.fillText(String(tick + 1), 40, y);
+      });
+
+      context.textAlign = 'left';
+      context.textBaseline = 'middle';
+      [max, (min + max) / 2, min].forEach((value) => {
+        const normalized = span > 0 ? (value - min) / span : 0;
+        const y = heatmapTop + heatmapSize - normalized * heatmapSize;
+        context.fillText(formatShortNumber(value, 1), colorBarX + colorBarWidth + 6, y);
+      });
+    }
+
+    function drawSortedSpectrum(sortedEigenvalues) {
+      const { context, width, height } = setupCanvas(spectrumCanvas);
+      const padding = { top: 30, right: 20, bottom: 44, left: 82 };
+      const availableWidth = width - padding.left - padding.right;
+      const availableHeight = height - padding.top - padding.bottom;
+      const plotSize = Math.min(availableHeight, availableWidth - 46);
+      const plotLeft = padding.left + (availableWidth - plotSize) / 2;
+      const plotTop = padding.top + (availableHeight - plotSize) / 2;
+
+      const positiveValues = sortedEigenvalues.map((value) => Math.max(value, 1e-8));
+      const xLogs = positiveValues.map((_, index) => Math.log10(index + 1));
+      const yLogs = positiveValues.map((value) => Math.log10(value));
+      const xMin = xLogs[0];
+      const xMax = xLogs[xLogs.length - 1];
+      const yMin = Math.min(...yLogs);
+      const yMax = Math.max(...yLogs);
+      const xSpan = Math.max(xMax - xMin, 1e-9);
+      const ySpan = Math.max(yMax - yMin, 1e-9);
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, width, height);
+
+      context.strokeStyle = 'rgba(17, 17, 17, 0.12)';
+      context.lineWidth = 1;
+      [0.25, 0.5, 0.75].forEach((fraction) => {
+        const y = plotTop + fraction * plotSize;
+        context.beginPath();
+        context.moveTo(plotLeft, y);
+        context.lineTo(plotLeft + plotSize, y);
+        context.stroke();
+      });
+
+      context.strokeStyle = '#111';
+      context.lineWidth = 1.2;
+      context.beginPath();
+      context.moveTo(plotLeft, plotTop);
+      context.lineTo(plotLeft, plotTop + plotSize);
+      context.lineTo(plotLeft + plotSize, plotTop + plotSize);
+      context.stroke();
+
+      context.strokeStyle = '#165d52';
+      context.lineWidth = 2.2;
+      context.beginPath();
+      positiveValues.forEach((value, index) => {
+        const x = plotLeft + ((xLogs[index] - xMin) / xSpan) * plotSize;
+        const y = plotTop + plotSize - ((Math.log10(value) - yMin) / ySpan) * plotSize;
+        if (index === 0) {
+          context.moveTo(x, y);
+        } else {
+          context.lineTo(x, y);
+        }
+      });
+      context.stroke();
+
+      context.fillStyle = '#165d52';
+      positiveValues.forEach((value, index) => {
+        const x = plotLeft + ((xLogs[index] - xMin) / xSpan) * plotSize;
+        const y = plotTop + plotSize - ((Math.log10(value) - yMin) / ySpan) * plotSize;
+        context.beginPath();
+        context.arc(x, y, 2.05, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      const axisBottom = plotTop + plotSize;
+
+      context.fillStyle = '#4b4b4b';
+      context.font = '13px Georgia, serif';
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('eigenvalue index i', plotLeft + plotSize / 2, axisBottom + 26);
+
+      context.save();
+      context.translate(24, plotTop + plotSize / 2);
+      context.rotate(-Math.PI / 2);
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('eigenvalue λᵢ', 0, 0);
+      context.restore();
+
+      const xTicks = [1, 10, positiveValues.length];
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      xTicks.forEach((tick) => {
+        const x = plotLeft + ((Math.log10(tick) - xMin) / xSpan) * plotSize;
+        context.fillText(String(tick), x, axisBottom + 10);
+      });
+
+      const yTicks = [yMin, (yMin + yMax) / 2, yMax];
+      context.textAlign = 'right';
+      context.textBaseline = 'middle';
+      yTicks.forEach((tick) => {
+        const y = plotTop + plotSize - ((tick - yMin) / ySpan) * plotSize;
+        context.fillText(`10${toSuperscript(formatShortNumber(tick, 1))}`, plotLeft - 12, y);
+      });
+    }
+
+    function renderPlots(hiddenLayers) {
+      const { matrix, sortedEigenvalues } = computeInfiniteWidthNtk(hiddenLayers);
+      drawNtkMatrix(matrix);
+      drawSortedSpectrum(sortedEigenvalues);
+    }
+
     function render(hiddenLayers) {
       value.textContent = String(hiddenLayers);
       svg.replaceChildren();
@@ -467,10 +865,15 @@ skip_mathjax: true
     }
 
     slider.addEventListener('input', (event) => {
-      render(Number(event.target.value));
+      const hiddenLayers = Number(event.target.value);
+      render(hiddenLayers);
+      renderPlots(hiddenLayers);
     });
 
-    render(Number(slider.value));
+    const initialLayers = Number(slider.value);
+    render(initialLayers);
     renderFeatureDiagram();
+    renderPlots(initialLayers);
+    window.addEventListener('resize', () => renderPlots(Number(slider.value)));
   })();
 </script>
