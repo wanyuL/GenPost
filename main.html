@@ -440,16 +440,16 @@ skip_mathjax: true
         layer.forEach((point) => nodeGroup.appendChild(makeNode(point.x, point.y, '#111111')));
       });
 
-      labelGroup.appendChild(makeText('𝐱 ∈ Rᵈ', 66, 196, 'end', '28', '#111', true));
-      labelGroup.appendChild(makeText('f(x; θ)', 790, 196, 'start', '28', '#111', true));
+      labelGroup.appendChild(makeText('𝐱 ∈ Rᵈ', 160, 100, 'middle', '28', '#111', true));
+      labelGroup.appendChild(makeText('f(𝐱; w)', 720, 116, 'middle', '28', '#111', true));
 
       visibleHiddenIndices.forEach((hiddenIndex, index) => {
         const x = layers[index + 1][0].x;
         const subscript = hiddenLayers === 1 ? '' : String(hiddenIndex + 1);
         if (!subscript) {
-          labelGroup.appendChild(makeText('h(x)', x, 46, 'middle', '18', '#111', true));
+          labelGroup.appendChild(makeText('h(𝐱)', x, 46, 'middle', '28', '#111', true));
         } else {
-          labelGroup.appendChild(makeSubscriptLabel('h', subscript, '(x)', x, 46, 'middle'));
+          labelGroup.appendChild(makeSubscriptLabel('h', subscript, '(𝐱)', x, 46, 'middle', 28, 18));
         }
       });
 
