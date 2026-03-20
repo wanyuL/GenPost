@@ -30,8 +30,16 @@ skip_mathjax: true
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <style>
+  :root {
+    --model-color: peru;
+    --target-color: slateblue;
+    --data-color: teal;
+    --dataset-color: steelblue;
+    --spectrum-color: #165d52;
+  }
+
   .post-shell {
-    max-width: 920px;
+    max-width: 1320px;
     margin: 0 auto;
     padding: 56px 28px 88px;
   }
@@ -134,9 +142,105 @@ skip_mathjax: true
     color: #111;
   }
 
+  .network-slider-label sup {
+    font-size: 0.62em;
+    line-height: 0;
+  }
+
+  .label-model {
+    color: var(--model-color);
+  }
+
+  .label-target {
+    color: var(--target-color);
+  }
+
+  .label-data {
+    color: var(--dataset-color);
+  }
+
+  #generalization-hidden-layer-slider {
+    --slider-fill: var(--model-color);
+  }
+
+  #generalization-mode-slider {
+    --slider-fill: var(--target-color);
+  }
+
+  #generalization-train-size-slider {
+    --slider-fill: var(--dataset-color);
+  }
+
   .network-slider {
     width: 100%;
     accent-color: #111;
+  }
+
+  #generalization-hidden-layer-slider,
+  #generalization-mode-slider,
+  #generalization-train-size-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      var(--slider-fill) 0%,
+      var(--slider-fill) var(--slider-percent, 50%),
+      rgba(17, 17, 17, 0.16) var(--slider-percent, 50%),
+      rgba(17, 17, 17, 0.16) 100%
+    );
+    outline: none;
+  }
+
+  #generalization-hidden-layer-slider::-webkit-slider-runnable-track,
+  #generalization-mode-slider::-webkit-slider-runnable-track,
+  #generalization-train-size-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent;
+    border-radius: 999px;
+  }
+
+  #generalization-hidden-layer-slider::-webkit-slider-thumb,
+  #generalization-mode-slider::-webkit-slider-thumb,
+  #generalization-train-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -4px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: var(--slider-fill);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  }
+
+  #generalization-hidden-layer-slider::-moz-range-track,
+  #generalization-mode-slider::-moz-range-track,
+  #generalization-train-size-slider::-moz-range-track {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(17, 17, 17, 0.16);
+  }
+
+  #generalization-hidden-layer-slider::-moz-range-progress,
+  #generalization-mode-slider::-moz-range-progress,
+  #generalization-train-size-slider::-moz-range-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--slider-fill);
+  }
+
+  #generalization-hidden-layer-slider::-moz-range-thumb,
+  #generalization-mode-slider::-moz-range-thumb,
+  #generalization-train-size-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: var(--slider-fill);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   }
 
   .network-diagram {
@@ -152,7 +256,7 @@ skip_mathjax: true
 
   .network-caption {
     margin: 18px 0 0;
-    min-height: 1.4em;
+    min-height: 2.8em;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -195,6 +299,66 @@ skip_mathjax: true
     display: block;
   }
 
+  .generalization-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+    margin-top: 28px;
+  }
+
+  .generalization-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: end;
+  }
+
+  .generalization-panel {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: 320px 3.2em;
+    align-items: start;
+    height: 100%;
+  }
+
+  .generalization-panel .network-caption {
+    height: 3.2em;
+    align-items: flex-start;
+  }
+
+  .generalization-frame {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    box-sizing: border-box;
+    border: 1px solid #d7d7d7;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+    overflow: hidden;
+  }
+
+  .generalization-frame.diagram-frame {
+    padding: 4px;
+  }
+
+  .generalization-diagram {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    .generalization-controls {
+      grid-template-columns: 1fr;
+    }
+
+    .generalization-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   @media (max-width: 720px) {
     .post-shell {
       padding-left: 20px;
@@ -217,6 +381,11 @@ skip_mathjax: true
     }
 
     .plot-figure-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .generalization-grid {
       grid-template-columns: 1fr;
       gap: 24px;
     }
@@ -285,6 +454,60 @@ skip_mathjax: true
   <section class="post-section">
     <h2 class="section-title">Mechanisms of generalization</h2>
     <p class="section-subtitle">through Eigen-learning Framework</p>
+    <div class="network-card">
+      <div class="generalization-controls">
+        <div class="network-slider-wrap">
+          <label class="network-slider-label" for="generalization-hidden-layer-slider">
+            <span><span class="label-model">Model</span>: Number of Hidden Layers</span>
+            <strong id="generalization-hidden-layer-value">3</strong>
+          </label>
+          <input class="network-slider" id="generalization-hidden-layer-slider" type="range" min="1" max="10" step="1" value="3">
+        </div>
+        <div class="network-slider-wrap">
+          <label class="network-slider-label" for="generalization-mode-slider">
+            <span><span class="label-target">Target</span>: Mode k</span>
+            <strong id="generalization-mode-value">8</strong>
+          </label>
+          <input class="network-slider" id="generalization-mode-slider" type="range" min="0" max="20" step="1" value="8">
+        </div>
+        <div class="network-slider-wrap">
+          <label class="network-slider-label" for="generalization-train-size-slider">
+            <span><span class="label-data">Data</span>: Train Size n</span>
+            <strong id="generalization-train-size-value">2<sup>5</sup> = 32</strong>
+          </label>
+          <input class="network-slider" id="generalization-train-size-slider" type="range" min="1" max="6" step="1" value="5">
+        </div>
+      </div>
+      <div class="generalization-grid">
+        <div class="generalization-panel">
+          <div class="generalization-frame diagram-frame">
+            <svg class="generalization-diagram" id="generalization-network-diagram" viewBox="0 0 860 360" role="img" aria-labelledby="generalization-network-diagram-title generalization-network-diagram-desc">
+              <title id="generalization-network-diagram-title">Neural network diagram for the generalization mechanism section</title>
+              <desc id="generalization-network-diagram-desc">A fully connected neural network with a tunable number of hidden layers.</desc>
+            </svg>
+          </div>
+          <p class="network-caption">Wide MLP in Neural Space</p>
+        </div>
+        <div class="generalization-panel">
+          <div class="generalization-frame">
+            <canvas class="plot-canvas" id="generalization-spectrum-plot" aria-label="Sorted NTK eigenspectrum on log-log axes for the generalization section"></canvas>
+          </div>
+          <p class="network-caption">Sorted NTK Eigenspectrum in Log-Log Scale</p>
+        </div>
+        <div class="generalization-panel">
+          <div class="generalization-frame">
+            <canvas class="plot-canvas" id="eigenmode-strength-plot" aria-label="Eigenmode strength plot showing target and learned coefficients"></canvas>
+          </div>
+          <p class="network-caption" id="eigenmode-strength-caption">Eigenmode Strength at n = 32 and target mode k = 8</p>
+        </div>
+        <div class="generalization-panel">
+          <div class="generalization-frame">
+            <canvas class="plot-canvas" id="theoretical-mse-plot" aria-label="Theoretical test MSE curve for a selected target mode"></canvas>
+          </div>
+          <p class="network-caption" id="theoretical-mse-caption">Theoretical Test MSE for target mode k = 8</p>
+        </div>
+      </div>
+    </div>
   </section>
 </div>
 
@@ -296,7 +519,25 @@ skip_mathjax: true
     const featureSvg = document.getElementById('feature-diagram');
     const matrixCanvas = document.getElementById('ntk-matrix-plot');
     const spectrumCanvas = document.getElementById('ntk-spectrum-plot');
-    if (!slider || !value || !svg || !featureSvg || !matrixCanvas || !spectrumCanvas) return;
+    const generalizationSlider = document.getElementById('generalization-hidden-layer-slider');
+    const generalizationValue = document.getElementById('generalization-hidden-layer-value');
+    const generalizationModeSlider = document.getElementById('generalization-mode-slider');
+    const generalizationModeValue = document.getElementById('generalization-mode-value');
+    const generalizationTrainSizeSlider = document.getElementById('generalization-train-size-slider');
+    const generalizationTrainSizeValue = document.getElementById('generalization-train-size-value');
+    const generalizationSvg = document.getElementById('generalization-network-diagram');
+    const generalizationSpectrumCanvas = document.getElementById('generalization-spectrum-plot');
+    const eigenmodeCanvas = document.getElementById('eigenmode-strength-plot');
+    const mseCanvas = document.getElementById('theoretical-mse-plot');
+    const eigenmodeCaption = document.getElementById('eigenmode-strength-caption');
+    const mseCaption = document.getElementById('theoretical-mse-caption');
+    if (
+      !slider || !value || !svg || !featureSvg || !matrixCanvas || !spectrumCanvas ||
+      !generalizationSlider || !generalizationValue || !generalizationModeSlider ||
+      !generalizationModeValue || !generalizationTrainSizeSlider || !generalizationTrainSizeValue ||
+      !generalizationSvg || !generalizationSpectrumCanvas || !eigenmodeCanvas || !mseCanvas ||
+      !eigenmodeCaption || !mseCaption
+    ) return;
 
     const svgNs = 'http://www.w3.org/2000/svg';
     const plotConfig = {
@@ -304,6 +545,18 @@ skip_mathjax: true
       inputDim: 2,
       weightVar: 2,
       biasVar: 0.01
+    };
+    const generalizationConfig = {
+      msePoints: 180
+    };
+    const colors = {
+      model: 'peru',
+      target: 'slateblue',
+      dataset: 'steelblue',
+      spectrum: '#165d52',
+      axis: '#111',
+      grid: 'rgba(17, 17, 17, 0.12)',
+      label: '#4b4b4b'
     };
 
     function makeNode(x, y, stroke) {
@@ -580,10 +833,19 @@ skip_mathjax: true
         normalizedRow.reduce((sum, value, index) => sum + value * Math.cos(mode * angles[index]), 0)
       );
       const sortedEigenvalues = eigenvalues.slice().sort((a, b) => b - a);
+      const uniqueEigenvalues = eigenvalues.slice(0, Math.floor(samples / 2) + 1);
+      const multiplicities = uniqueEigenvalues.map((_, index) => {
+        if (index === 0) return 1;
+        if (samples % 2 === 0 && index === samples / 2) return 1;
+        return 2;
+      });
 
       return {
         matrix: outputKernel,
-        sortedEigenvalues
+        sortedEigenvalues,
+        fourierEigenvalues: eigenvalues,
+        uniqueEigenvalues,
+        multiplicities
       };
     }
 
@@ -630,8 +892,8 @@ skip_mathjax: true
       return Number.isInteger(rounded) ? String(rounded) : String(rounded);
     }
 
-    function drawNtkMatrix(matrix) {
-      const { context, width, height } = setupCanvas(matrixCanvas);
+    function drawNtkMatrix(canvas, matrix) {
+      const { context, width, height } = setupCanvas(canvas);
       const padding = { top: 28, right: 62, bottom: 44, left: 62 };
       const availableWidth = width - padding.left - padding.right;
       const availableHeight = height - padding.top - padding.bottom;
@@ -659,7 +921,7 @@ skip_mathjax: true
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, width, height);
 
-      context.fillStyle = '#111';
+      context.fillStyle = colors.axis;
       context.font = 'italic 15px "Times New Roman", Georgia, serif';
       context.textAlign = 'left';
       context.textBaseline = 'middle';
@@ -691,7 +953,7 @@ skip_mathjax: true
         }
       }
 
-      context.strokeStyle = '#111';
+      context.strokeStyle = colors.axis;
       context.lineWidth = 1.15;
       context.strokeRect(heatmapLeft, heatmapTop, heatmapSize, heatmapSize);
 
@@ -705,7 +967,7 @@ skip_mathjax: true
 
       const axisBottom = heatmapTop + heatmapSize;
 
-      context.fillStyle = '#4b4b4b';
+      context.fillStyle = colors.label;
       context.font = '13px Georgia, serif';
       context.textAlign = 'center';
       context.textBaseline = 'top';
@@ -737,9 +999,9 @@ skip_mathjax: true
       });
     }
 
-    function drawSortedSpectrum(sortedEigenvalues) {
-      const { context, width, height } = setupCanvas(spectrumCanvas);
-      const padding = { top: 30, right: 20, bottom: 44, left: 82 };
+    function drawSortedSpectrum(canvas, sortedEigenvalues, options = {}) {
+      const { context, width, height } = setupCanvas(canvas);
+      const padding = options.padding ?? { top: 30, right: 20, bottom: 44, left: 52 };
       const availableWidth = width - padding.left - padding.right;
       const availableHeight = height - padding.top - padding.bottom;
       const plotSize = Math.min(availableHeight, availableWidth - 46);
@@ -759,7 +1021,7 @@ skip_mathjax: true
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, width, height);
 
-      context.strokeStyle = 'rgba(17, 17, 17, 0.12)';
+      context.strokeStyle = colors.grid;
       context.lineWidth = 1;
       [0.25, 0.5, 0.75].forEach((fraction) => {
         const y = plotTop + fraction * plotSize;
@@ -769,7 +1031,7 @@ skip_mathjax: true
         context.stroke();
       });
 
-      context.strokeStyle = '#111';
+      context.strokeStyle = colors.axis;
       context.lineWidth = 1.2;
       context.beginPath();
       context.moveTo(plotLeft, plotTop);
@@ -777,7 +1039,7 @@ skip_mathjax: true
       context.lineTo(plotLeft + plotSize, plotTop + plotSize);
       context.stroke();
 
-      context.strokeStyle = '#165d52';
+      context.strokeStyle = colors.spectrum;
       context.lineWidth = 2.2;
       context.beginPath();
       positiveValues.forEach((value, index) => {
@@ -791,7 +1053,7 @@ skip_mathjax: true
       });
       context.stroke();
 
-      context.fillStyle = '#165d52';
+      context.fillStyle = colors.spectrum;
       positiveValues.forEach((value, index) => {
         const x = plotLeft + ((xLogs[index] - xMin) / xSpan) * plotSize;
         const y = plotTop + plotSize - ((Math.log10(value) - yMin) / ySpan) * plotSize;
@@ -802,14 +1064,14 @@ skip_mathjax: true
 
       const axisBottom = plotTop + plotSize;
 
-      context.fillStyle = '#4b4b4b';
+      context.fillStyle = colors.label;
       context.font = '13px Georgia, serif';
       context.textAlign = 'center';
       context.textBaseline = 'top';
       context.fillText('eigenvalue index i', plotLeft + plotSize / 2, axisBottom + 26);
 
       context.save();
-      context.translate(24, plotTop + plotSize / 2);
+      context.translate(10, plotTop + plotSize / 2);
       context.rotate(-Math.PI / 2);
       context.textAlign = 'center';
       context.textBaseline = 'top';
@@ -833,17 +1095,289 @@ skip_mathjax: true
       });
     }
 
-    function renderPlots(hiddenLayers) {
-      const { matrix, sortedEigenvalues } = computeInfiniteWidthNtk(hiddenLayers);
-      drawNtkMatrix(matrix);
-      drawSortedSpectrum(sortedEigenvalues);
+    function solveKappa(levelEigenvalues, multiplicities, n, ridge = 0) {
+      const lambdas = levelEigenvalues.map((value) => Math.max(value, 1e-10));
+      let lo = 1e-12;
+      let hi = Math.max(1, lambdas[0] * 1e6);
+
+      for (let iteration = 0; iteration < 250; iteration += 1) {
+        const mid = 0.5 * (lo + hi);
+        const lhs = lambdas.reduce(
+          (sum, lambda, index) => sum + multiplicities[index] * (lambda / (lambda + mid)),
+          0
+        ) + ridge / mid;
+        if (lhs > n) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+
+      return 0.5 * (lo + hi);
     }
 
-    function render(hiddenLayers) {
-      value.textContent = String(hiddenLayers);
-      svg.replaceChildren();
+    function drawLegend(context, items, x, y) {
+      context.font = '12px Georgia, serif';
+      context.textAlign = 'left';
+      context.textBaseline = 'middle';
+      items.forEach((item, index) => {
+        const lineY = y + index * 18;
+        context.strokeStyle = item.color;
+        context.fillStyle = item.color;
+        context.lineWidth = 2.2;
+        context.beginPath();
+        context.moveTo(x, lineY);
+        context.lineTo(x + 18, lineY);
+        context.stroke();
+        context.beginPath();
+        context.arc(x + 9, lineY, 2.2, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = colors.label;
+        context.fillText(item.label, x + 26, lineY);
+      });
+    }
 
-      const bounds = { left: 160, right: 720, top: 88, bottom: 304 };
+    function drawEigenmodeStrength(canvas, levelEigenvalues, multiplicities, modeIndex, n) {
+      const { context, width, height } = setupCanvas(canvas);
+      const padding = { top: 30, right: 20, bottom: 44, left: 52 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+      const safeModeIndex = Math.min(modeIndex, levelEigenvalues.length - 1);
+      const kappa = solveKappa(levelEigenvalues, multiplicities, n);
+      const learnabilities = levelEigenvalues.map((lambda) => lambda / (lambda + kappa));
+      const v = levelEigenvalues.map((_, index) => (index === safeModeIndex ? 1 : 0));
+      const vHat = learnabilities.map((value, index) => value * v[index]);
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, width, height);
+
+      context.strokeStyle = colors.grid;
+      context.lineWidth = 1;
+      [0.25, 0.5, 0.75].forEach((fraction) => {
+        const y = padding.top + fraction * plotHeight;
+        context.beginPath();
+        context.moveTo(padding.left, y);
+        context.lineTo(padding.left + plotWidth, y);
+        context.stroke();
+      });
+
+      context.strokeStyle = colors.axis;
+      context.lineWidth = 1.35;
+      context.beginPath();
+      context.moveTo(padding.left, padding.top);
+      context.lineTo(padding.left, padding.top + plotHeight);
+      context.lineTo(padding.left + plotWidth, padding.top + plotHeight);
+      context.stroke();
+
+      function drawSeries(values, color) {
+        context.strokeStyle = color;
+        context.fillStyle = color;
+        context.lineWidth = 2.2;
+        context.beginPath();
+        values.forEach((value, index) => {
+          const x = padding.left + (index / Math.max(values.length - 1, 1)) * plotWidth;
+          const y = padding.top + plotHeight - value * plotHeight;
+          if (index === 0) {
+            context.moveTo(x, y);
+          } else {
+            context.lineTo(x, y);
+          }
+        });
+        context.stroke();
+
+        values.forEach((value, index) => {
+          const x = padding.left + (index / Math.max(values.length - 1, 1)) * plotWidth;
+          const y = padding.top + plotHeight - value * plotHeight;
+          context.beginPath();
+          context.arc(x, y, index === safeModeIndex ? 3 : 2, 0, Math.PI * 2);
+          context.fill();
+        });
+      }
+
+      drawSeries(v, colors.target);
+      drawSeries(vHat, colors.model);
+
+      context.strokeStyle = 'rgba(17, 17, 17, 0.24)';
+      context.setLineDash([5, 4]);
+      const focusX = padding.left + (safeModeIndex / Math.max(levelEigenvalues.length - 1, 1)) * plotWidth;
+      context.beginPath();
+      context.moveTo(focusX, padding.top);
+      context.lineTo(focusX, padding.top + plotHeight);
+      context.stroke();
+      context.setLineDash([]);
+
+      context.fillStyle = colors.label;
+      context.font = '13px Georgia, serif';
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('mode index i', padding.left + plotWidth / 2, padding.top + plotHeight + 26);
+
+      context.save();
+      context.translate(10, padding.top + plotHeight / 2);
+      context.rotate(-Math.PI / 2);
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('strength', 0, 0);
+      context.restore();
+
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      [0, safeModeIndex, levelEigenvalues.length - 1].filter((tick, index, arr) => arr.indexOf(tick) === index).forEach((tick) => {
+        const x = padding.left + (tick / Math.max(levelEigenvalues.length - 1, 1)) * plotWidth;
+        context.fillText(String(tick), x, padding.top + plotHeight + 10);
+      });
+
+      context.textAlign = 'right';
+      context.textBaseline = 'middle';
+      [0, 0.5, 1].forEach((tick) => {
+        const y = padding.top + plotHeight - tick * plotHeight;
+        context.fillText(formatShortNumber(tick, 1), padding.left - 8, y);
+      });
+
+      drawLegend(context, [
+        { label: 'v_i', color: colors.target },
+        { label: 'v̂_i', color: colors.model }
+      ], width - 74, padding.top + 14);
+    }
+
+    function drawTheoreticalMse(canvas, levelEigenvalues, multiplicities, modeIndex, highlightedTrainSize) {
+      const { context, width, height } = setupCanvas(canvas);
+      const padding = { top: 30, right: 20, bottom: 44, left: 60 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+      const safeModeIndex = Math.min(modeIndex, levelEigenvalues.length - 1);
+      const nValues = Array.from({ length: generalizationConfig.msePoints }, (_, index) => {
+        const fraction = index / Math.max(generalizationConfig.msePoints - 1, 1);
+        return Math.pow(2, 6 * fraction);
+      });
+      const targetCoefficients = levelEigenvalues.map((_, index) => (index === safeModeIndex ? 1 : 0));
+      const mseValues = nValues.map((n) => {
+        const kappa = solveKappa(levelEigenvalues, multiplicities, n);
+        const learnabilities = levelEigenvalues.map((lambda) => lambda / (lambda + kappa));
+        const overfittingCoefficient = n / Math.max(
+          n - learnabilities.reduce(
+            (sum, value, index) => sum + multiplicities[index] * value * value,
+            0
+          ),
+          1e-9
+        );
+        const residual = targetCoefficients.reduce(
+          (sum, coefficient, index) => sum + Math.pow(1 - learnabilities[index], 2) * coefficient * coefficient,
+          0
+        );
+        return overfittingCoefficient * residual;
+      });
+
+      const xLogs = nValues.map((value) => Math.log2(value));
+      const yMax = Math.max(...mseValues, 1e-6);
+      const yMin = 0;
+      const xMin = xLogs[0];
+      const xMax = xLogs[xLogs.length - 1];
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, width, height);
+
+      context.strokeStyle = colors.grid;
+      context.lineWidth = 1;
+      [0.25, 0.5, 0.75].forEach((fraction) => {
+        const y = padding.top + fraction * plotHeight;
+        context.beginPath();
+        context.moveTo(padding.left, y);
+        context.lineTo(padding.left + plotWidth, y);
+        context.stroke();
+      });
+
+      context.strokeStyle = colors.axis;
+      context.lineWidth = 1.2;
+      context.beginPath();
+      context.moveTo(padding.left, padding.top);
+      context.lineTo(padding.left, padding.top + plotHeight);
+      context.lineTo(padding.left + plotWidth, padding.top + plotHeight);
+      context.stroke();
+
+      context.strokeStyle = '#303030';
+      context.lineWidth = 2.4;
+      context.beginPath();
+      mseValues.forEach((value, index) => {
+        const x = padding.left + ((xLogs[index] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+        const y = padding.top + plotHeight - ((value - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+        if (index === 0) {
+          context.moveTo(x, y);
+        } else {
+          context.lineTo(x, y);
+        }
+      });
+      context.stroke();
+
+      const highlightedIndex = nValues.reduce((bestIndex, value, index) =>
+        Math.abs(value - highlightedTrainSize) < Math.abs(nValues[bestIndex] - highlightedTrainSize) ? index : bestIndex,
+      0);
+      const highlightX = padding.left + ((xLogs[highlightedIndex] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+      const highlightY = padding.top + plotHeight - ((mseValues[highlightedIndex] - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+
+      context.strokeStyle = 'rgba(17, 17, 17, 0.24)';
+      context.setLineDash([5, 4]);
+      context.beginPath();
+      context.moveTo(highlightX, padding.top);
+      context.lineTo(highlightX, padding.top + plotHeight);
+      context.stroke();
+      context.setLineDash([]);
+
+      context.fillStyle = colors.dataset;
+      context.beginPath();
+      context.arc(highlightX, highlightY, 4.2, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = colors.label;
+      context.font = '13px Georgia, serif';
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('train size n', padding.left + plotWidth / 2, padding.top + plotHeight + 26);
+
+      context.save();
+      context.translate(12, padding.top + plotHeight / 2);
+      context.rotate(-Math.PI / 2);
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      context.fillText('test MSE', 0, 0);
+      context.restore();
+
+      context.textAlign = 'center';
+      context.textBaseline = 'top';
+      [1, 8, 64].forEach((tick) => {
+        const x = padding.left + ((Math.log2(tick) - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+        context.fillText(String(tick), x, padding.top + plotHeight + 10);
+      });
+
+      context.textAlign = 'right';
+      context.textBaseline = 'middle';
+      [0, 0.5, 1].map((fraction) => fraction * yMax).forEach((tick) => {
+        const y = padding.top + plotHeight - ((tick - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+        context.fillText(formatShortNumber(tick, 2), padding.left - 8, y);
+      });
+    }
+
+    function trainSizeFromExponent(exponent) {
+      return 2 ** exponent;
+    }
+
+    function updateSliderFill(sliderElement) {
+      const min = Number(sliderElement.min ?? 0);
+      const max = Number(sliderElement.max ?? 100);
+      const value = Number(sliderElement.value);
+      const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
+      sliderElement.style.setProperty('--slider-percent', `${percent}%`);
+    }
+
+    function renderPlots(hiddenLayers) {
+      const { matrix, sortedEigenvalues } = computeInfiniteWidthNtk(hiddenLayers);
+      drawNtkMatrix(matrixCanvas, matrix);
+      drawSortedSpectrum(spectrumCanvas, sortedEigenvalues);
+    }
+
+    function renderNetworkDiagram(targetSvg, hiddenLayers, options = {}) {
+      targetSvg.replaceChildren();
+      const bounds = options.bounds ?? { left: 160, right: 720, top: 88, bottom: 304 };
       const hiddenCounts = hiddenLayerCounts(hiddenLayers);
       const hiddenStartX = 260;
       const outputX = bounds.right;
@@ -910,10 +1444,47 @@ skip_mathjax: true
         });
       }
 
-      svg.appendChild(edgeGroup);
-      svg.appendChild(nodeGroup);
-      svg.appendChild(labelGroup);
-      svg.appendChild(annotationGroup);
+      targetSvg.appendChild(edgeGroup);
+      targetSvg.appendChild(nodeGroup);
+      targetSvg.appendChild(labelGroup);
+      targetSvg.appendChild(annotationGroup);
+    }
+
+    function render(hiddenLayers) {
+      value.textContent = String(hiddenLayers);
+      renderNetworkDiagram(svg, hiddenLayers);
+    }
+
+    function renderGeneralization(hiddenLayers) {
+      const modeIndex = Number(generalizationModeSlider.value);
+      const trainSizeExponent = Number(generalizationTrainSizeSlider.value);
+      const trainSize = trainSizeFromExponent(trainSizeExponent);
+      generalizationValue.textContent = String(hiddenLayers);
+      generalizationModeValue.textContent = String(modeIndex);
+      generalizationTrainSizeValue.innerHTML = `2<sup>${trainSizeExponent}</sup> = ${trainSize}`;
+      renderNetworkDiagram(generalizationSvg, hiddenLayers, {
+        bounds: { left: 128, right: 742, top: 70, bottom: 322 }
+      });
+      const { sortedEigenvalues, uniqueEigenvalues, multiplicities } = computeInfiniteWidthNtk(hiddenLayers);
+      drawSortedSpectrum(generalizationSpectrumCanvas, sortedEigenvalues, {
+        padding: { top: 30, right: 20, bottom: 44, left: 52 }
+      });
+      drawEigenmodeStrength(
+        eigenmodeCanvas,
+        uniqueEigenvalues,
+        multiplicities,
+        modeIndex,
+        trainSize
+      );
+      drawTheoreticalMse(
+        mseCanvas,
+        uniqueEigenvalues,
+        multiplicities,
+        modeIndex,
+        trainSize
+      );
+      eigenmodeCaption.textContent = `Eigenmode Strength at n = ${trainSize} and target mode k = ${modeIndex}`;
+      mseCaption.textContent = `Theoretical Test MSE for target mode k = ${modeIndex}`;
     }
 
     slider.addEventListener('input', (event) => {
@@ -922,10 +1493,30 @@ skip_mathjax: true
       renderPlots(hiddenLayers);
     });
 
+    generalizationSlider.addEventListener('input', (event) => {
+      updateSliderFill(event.target);
+      renderGeneralization(Number(event.target.value));
+    });
+
+    generalizationModeSlider.addEventListener('input', () => {
+      updateSliderFill(generalizationModeSlider);
+      renderGeneralization(Number(generalizationSlider.value));
+    });
+
+    generalizationTrainSizeSlider.addEventListener('input', () => {
+      updateSliderFill(generalizationTrainSizeSlider);
+      renderGeneralization(Number(generalizationSlider.value));
+    });
+
     const initialLayers = Number(slider.value);
     render(initialLayers);
     renderFeatureDiagram();
     renderPlots(initialLayers);
-    window.addEventListener('resize', () => renderPlots(Number(slider.value)));
+    [generalizationSlider, generalizationModeSlider, generalizationTrainSizeSlider].forEach(updateSliderFill);
+    renderGeneralization(Number(generalizationSlider.value));
+    window.addEventListener('resize', () => {
+      renderPlots(Number(slider.value));
+      renderGeneralization(Number(generalizationSlider.value));
+    });
   })();
 </script>
