@@ -83,6 +83,79 @@ skip_mathjax: true
     color: #111;
     font-size: 1.2rem;
   }
+
+  .network-card {
+    margin-top: 28px;
+    padding: 28px;
+    border: 1px solid #d8d8d8;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06);
+  }
+
+  .network-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .network-slider-wrap {
+    min-width: min(100%, 260px);
+  }
+
+  .network-slider-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    font-size: 0.92rem;
+    color: #333;
+  }
+
+  .network-slider-label strong {
+    font-size: 1.25rem;
+    color: #111;
+  }
+
+  .network-slider {
+    width: 100%;
+    accent-color: #111;
+  }
+
+  .network-diagram {
+    width: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .network-caption {
+    margin: 18px 0 0;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #5a5a5a;
+    letter-spacing: 0.02em;
+  }
+
+  @media (max-width: 720px) {
+    .post-shell {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .section-subtitle,
+    .section-equation {
+      padding-left: 20px;
+    }
+
+    .network-card {
+      padding: 20px 16px;
+      border-radius: 22px;
+    }
+  }
 </style>
 
 <div class="post-shell">
@@ -100,6 +173,22 @@ skip_mathjax: true
   <section class="post-section">
     <h2 class="section-title">Into the Eigen World</h2>
     <p class="section-subtitle">spectral decomposition of neural networks as kernel machines in function space</p>
+    <div class="network-card">
+      <div class="network-controls">
+        <div class="network-slider-wrap">
+          <label class="network-slider-label" for="hidden-layer-slider">
+            <span>Number of Hidden Layers</span>
+            <strong id="hidden-layer-value">3</strong>
+          </label>
+          <input class="network-slider" id="hidden-layer-slider" type="range" min="1" max="10" step="1" value="3">
+        </div>
+      </div>
+      <svg class="network-diagram" id="network-diagram" viewBox="0 0 860 360" role="img" aria-labelledby="network-diagram-title network-diagram-desc">
+        <title id="network-diagram-title">Neural network diagram</title>
+        <desc id="network-diagram-desc">A fully connected neural network with a tunable number of hidden layers.</desc>
+      </svg>
+      <p class="network-caption">Neural representation with adjustable depth</p>
+    </div>
   </section>
 
   <section class="post-section">
@@ -107,3 +196,190 @@ skip_mathjax: true
     <p class="section-subtitle">through Eigen-learning Framework</p>
   </section>
 </div>
+
+<script>
+  (() => {
+    const slider = document.getElementById('hidden-layer-slider');
+    const value = document.getElementById('hidden-layer-value');
+    const svg = document.getElementById('network-diagram');
+    if (!slider || !value || !svg) return;
+
+    const svgNs = 'http://www.w3.org/2000/svg';
+    function makeNode(x, y, stroke) {
+      const circle = document.createElementNS(svgNs, 'circle');
+      circle.setAttribute('cx', x);
+      circle.setAttribute('cy', y);
+      circle.setAttribute('r', 11);
+      circle.setAttribute('fill', '#ffffff');
+      circle.setAttribute('stroke', stroke);
+      circle.setAttribute('stroke-width', '3');
+      return circle;
+    }
+
+    function makeLine(x1, y1, x2, y2) {
+      const line = document.createElementNS(svgNs, 'line');
+      line.setAttribute('x1', x1);
+      line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2);
+      line.setAttribute('y2', y2);
+      line.setAttribute('stroke', 'rgba(17, 17, 17, 0.38)');
+      line.setAttribute('stroke-width', '1.65');
+      line.setAttribute('stroke-linecap', 'round');
+      return line;
+    }
+
+    function makeText(text, x, y, anchor, size, fill, italic = false) {
+      const node = document.createElementNS(svgNs, 'text');
+      node.textContent = text;
+      node.setAttribute('x', x);
+      node.setAttribute('y', y);
+      node.setAttribute('text-anchor', anchor);
+      node.setAttribute('font-size', size);
+      node.setAttribute('fill', fill);
+      node.setAttribute('font-family', '"Times New Roman", Georgia, serif');
+      if (italic) node.setAttribute('font-style', 'italic');
+      return node;
+    }
+
+    function makeSubscriptLabel(prefix, subscript, suffix, x, y, anchor) {
+      const text = document.createElementNS(svgNs, 'text');
+      text.setAttribute('x', x);
+      text.setAttribute('y', y);
+      text.setAttribute('text-anchor', anchor);
+      text.setAttribute('fill', '#111');
+      text.setAttribute('font-family', '"Times New Roman", Georgia, serif');
+      text.setAttribute('font-size', '18');
+      text.setAttribute('font-style', 'italic');
+
+      const prefixSpan = document.createElementNS(svgNs, 'tspan');
+      prefixSpan.textContent = prefix;
+      text.appendChild(prefixSpan);
+
+      const subscriptSpan = document.createElementNS(svgNs, 'tspan');
+      subscriptSpan.textContent = subscript;
+      subscriptSpan.setAttribute('baseline-shift', 'sub');
+      subscriptSpan.setAttribute('font-size', '13');
+      text.appendChild(subscriptSpan);
+
+      const suffixSpan = document.createElementNS(svgNs, 'tspan');
+      suffixSpan.textContent = suffix;
+      text.appendChild(suffixSpan);
+
+      return text;
+    }
+
+    function makeDot(x, y, radius = 3.4) {
+      const dot = document.createElementNS(svgNs, 'circle');
+      dot.setAttribute('cx', x);
+      dot.setAttribute('cy', y);
+      dot.setAttribute('r', radius);
+      dot.setAttribute('fill', '#111');
+      return dot;
+    }
+
+    function layerNodes(count, x, top, bottom) {
+      if (count === 1) return [{ x, y: (top + bottom) / 2 }];
+      const step = (bottom - top) / (count - 1);
+      return Array.from({ length: count }, (_, index) => ({
+        x,
+        y: top + step * index
+      }));
+    }
+
+    function inputLayerNodes(x, top, bottom) {
+      const center = (top + bottom) / 2;
+      const gap = (bottom - top) / 2;
+      return [
+        { x, y: center - gap / 2 },
+        { x, y: center + gap / 2 }
+      ];
+    }
+
+    function hiddenLayerCounts(hiddenLayers) {
+      return Array.from({ length: hiddenLayers }, () => 6);
+    }
+
+    function render(hiddenLayers) {
+      value.textContent = String(hiddenLayers);
+      svg.replaceChildren();
+
+      const bounds = { left: 160, right: 720, top: 88, bottom: 304 };
+      const hiddenCounts = hiddenLayerCounts(hiddenLayers);
+      const hiddenStartX = 260;
+      const outputX = bounds.right;
+      const abbreviated = hiddenLayers > 4;
+      const visibleHiddenIndices = abbreviated
+        ? [0, 1, hiddenLayers - 2, hiddenLayers - 1]
+        : hiddenCounts.map((_, index) => index);
+      const hiddenXPositions = abbreviated
+        ? [250, 340, 480, 570]
+        : visibleHiddenIndices.map((_, index) => {
+            if (hiddenLayers === 1) return 410;
+            const hiddenEndX = outputX - 96;
+            const hiddenStepX = (hiddenEndX - hiddenStartX) / (hiddenLayers - 1);
+            return hiddenStartX + hiddenStepX * index;
+          });
+
+      const layers = [
+        inputLayerNodes(bounds.left, bounds.top, bounds.bottom),
+        ...visibleHiddenIndices.map((hiddenIndex, index) =>
+          layerNodes(hiddenCounts[hiddenIndex], hiddenXPositions[index], bounds.top, bounds.bottom)
+        ),
+        layerNodes(1, outputX, bounds.top, bounds.bottom)
+      ];
+
+      const edgeGroup = document.createElementNS(svgNs, 'g');
+      const nodeGroup = document.createElementNS(svgNs, 'g');
+      const labelGroup = document.createElementNS(svgNs, 'g');
+      const annotationGroup = document.createElementNS(svgNs, 'g');
+
+      const visibleHiddenCount = visibleHiddenIndices.length;
+      const totalVisibleLayers = layers.length;
+      for (let i = 0; i < totalVisibleLayers - 1; i += 1) {
+        const skipForEllipsis = abbreviated && i === 2;
+        if (!skipForEllipsis) {
+          layers[i].forEach((source) => {
+            layers[i + 1].forEach((target) => {
+              edgeGroup.appendChild(makeLine(source.x, source.y, target.x, target.y));
+            });
+          });
+        }
+      }
+
+      layers.forEach((layer) => {
+        layer.forEach((point) => nodeGroup.appendChild(makeNode(point.x, point.y, '#111111')));
+      });
+
+      labelGroup.appendChild(makeText('𝐱 ∈ Rᵈ', 66, 196, 'end', '28', '#111', true));
+      labelGroup.appendChild(makeText('f(x; θ)', 790, 196, 'start', '28', '#111', true));
+
+      visibleHiddenIndices.forEach((hiddenIndex, index) => {
+        const x = layers[index + 1][0].x;
+        const subscript = hiddenLayers === 1 ? '' : String(hiddenIndex + 1);
+        if (!subscript) {
+          labelGroup.appendChild(makeText('h(x)', x, 46, 'middle', '18', '#111', true));
+        } else {
+          labelGroup.appendChild(makeSubscriptLabel('h', subscript, '(x)', x, 46, 'middle'));
+        }
+      });
+
+      if (abbreviated) {
+        const dotY = (bounds.top + bounds.bottom) / 2;
+        [390, 410, 430].forEach((x) => {
+          annotationGroup.appendChild(makeDot(x, dotY));
+        });
+      }
+
+      svg.appendChild(edgeGroup);
+      svg.appendChild(nodeGroup);
+      svg.appendChild(labelGroup);
+      svg.appendChild(annotationGroup);
+    }
+
+    slider.addEventListener('input', (event) => {
+      render(Number(event.target.value));
+    });
+
+    render(Number(slider.value));
+  })();
+</script>
