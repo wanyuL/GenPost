@@ -381,6 +381,38 @@ skip_mathjax: true
       return text;
     }
 
+    function makeFeatureFormula(x, y) {
+      const group = document.createElementNS(svgNs, 'g');
+      const color = '#111';
+      const fontFamily = '"Times New Roman", Georgia, serif';
+      const shiftX = 44;
+
+      const left = makeText('f(x) =', x - 126 + shiftX, y, 'start', '28', color, true);
+      left.setAttribute('font-family', fontFamily);
+
+      const sigmaX = x - 40 + shiftX;
+      const sigma = makeText('Σ', sigmaX, y + 2, 'middle', '32', color, false);
+      sigma.setAttribute('font-family', fontFamily);
+
+      const upper = makeText('N', sigmaX, y - 22, 'middle', '14', color, false);
+      upper.setAttribute('font-family', fontFamily);
+      upper.setAttribute('font-style', 'italic');
+
+      const lower = makeText('i=1', sigmaX, y + 18, 'middle', '14', color, false);
+      lower.setAttribute('font-family', fontFamily);
+      lower.setAttribute('font-style', 'italic');
+
+      const right = makeText('v̂ᵢ φᵢ(x)', x - 10 + shiftX, y, 'start', '28', color, true);
+      right.setAttribute('font-family', fontFamily);
+
+      group.appendChild(left);
+      group.appendChild(sigma);
+      group.appendChild(upper);
+      group.appendChild(lower);
+      group.appendChild(right);
+      return group;
+    }
+
     function makeDot(x, y, radius = 3.4) {
       const dot = document.createElementNS(svgNs, 'circle');
       dot.setAttribute('cx', x);
@@ -439,7 +471,7 @@ skip_mathjax: true
       shapeGroup.appendChild(makeNode(output.x, output.y, '#111111'));
 
       labelGroup.appendChild(makeText('𝐱 ∈ Rᵈ', inputBlock.left + inputBlock.size, 154, 'middle', '28', '#111', true));
-      labelGroup.appendChild(makeText('f(𝐱; w) = w · Φ(𝐱)', output.x, 116, 'middle', '28', '#111', true));
+      labelGroup.appendChild(makeFeatureFormula(output.x, 116));
       labelGroup.appendChild(makeSubscriptLabel('φ', '1', '(x)', featureX, 70, 'middle', 28, 18));
       labelGroup.appendChild(makeSubscriptLabel('φ', '2', '(x)', featureX, 118, 'middle', 28, 18));
       labelGroup.appendChild(makeText('⋮', featureX, 194, 'middle', '30', '#111', false));
@@ -622,9 +654,29 @@ skip_mathjax: true
       const span = Math.max(max - min, 1e-12);
       const cellWidth = heatmapSize / size;
       const cellHeight = heatmapSize / size;
+      const formulaY = 26;
 
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, width, height);
+
+      context.fillStyle = '#111';
+      context.font = 'italic 15px "Times New Roman", Georgia, serif';
+      context.textAlign = 'left';
+      context.textBaseline = 'middle';
+      context.fillText("K(x,x') =", heatmapLeft + 20, formulaY);
+
+      context.textAlign = 'center';
+      context.font = '19px "Times New Roman", Georgia, serif';
+      const sigmaX = heatmapLeft + 88;
+      context.fillText('Σ', sigmaX, formulaY + 2);
+
+      context.font = 'italic 10px "Times New Roman", Georgia, serif';
+      context.fillText('N', sigmaX, formulaY - 12);
+      context.fillText('i=1', sigmaX, formulaY + 12);
+
+      context.textAlign = 'left';
+      context.font = 'italic 15px "Times New Roman", Georgia, serif';
+      context.fillText("λᵢ φᵢ(x) φᵢ(x')", sigmaX + 14, formulaY);
 
       for (let row = 0; row < size; row += 1) {
         for (let column = 0; column < size; column += 1) {
@@ -839,7 +891,7 @@ skip_mathjax: true
       });
 
       labelGroup.appendChild(makeText('𝐱 ∈ Rᵈ', 160, 100, 'middle', '28', '#111', true));
-      labelGroup.appendChild(makeText('f(𝐱; w)', 720, 116, 'middle', '28', '#111', true));
+      labelGroup.appendChild(makeText('f(x)', 720, 116, 'middle', '28', '#111', true));
 
       visibleHiddenIndices.forEach((hiddenIndex, index) => {
         const x = layers[index + 1][0].x;
