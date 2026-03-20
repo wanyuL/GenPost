@@ -93,6 +93,19 @@ skip_mathjax: true
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06);
   }
 
+  .network-figure-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .network-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
   .network-controls {
     display: flex;
     align-items: center;
@@ -132,8 +145,17 @@ skip_mathjax: true
     overflow: visible;
   }
 
+  .feature-panel-spacer {
+    height: 70px;
+    flex: 0 0 auto;
+  }
+
   .network-caption {
     margin: 18px 0 0;
+    min-height: 1.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: 0.95rem;
     color: #5a5a5a;
@@ -155,6 +177,11 @@ skip_mathjax: true
       padding: 20px 16px;
       border-radius: 22px;
     }
+
+    .network-figure-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
   }
 </style>
 
@@ -174,20 +201,32 @@ skip_mathjax: true
     <h2 class="section-title">Into the Eigen World</h2>
     <p class="section-subtitle">spectral decomposition of neural networks as kernel machines in function space</p>
     <div class="network-card">
-      <div class="network-controls">
-        <div class="network-slider-wrap">
-          <label class="network-slider-label" for="hidden-layer-slider">
-            <span>Number of Hidden Layers</span>
-            <strong id="hidden-layer-value">3</strong>
-          </label>
-          <input class="network-slider" id="hidden-layer-slider" type="range" min="1" max="10" step="1" value="3">
+      <div class="network-figure-grid">
+        <div class="network-panel">
+          <div class="network-controls">
+            <div class="network-slider-wrap">
+              <label class="network-slider-label" for="hidden-layer-slider">
+                <span>Number of Hidden Layers</span>
+                <strong id="hidden-layer-value">3</strong>
+              </label>
+              <input class="network-slider" id="hidden-layer-slider" type="range" min="1" max="10" step="1" value="3">
+            </div>
+          </div>
+          <svg class="network-diagram" id="network-diagram" viewBox="0 0 860 360" role="img" aria-labelledby="network-diagram-title network-diagram-desc">
+            <title id="network-diagram-title">Neural network diagram</title>
+            <desc id="network-diagram-desc">A fully connected neural network with a tunable number of hidden layers.</desc>
+          </svg>
+          <p class="network-caption">Neural representation with adjustable depth</p>
+        </div>
+        <div class="network-panel">
+          <div class="feature-panel-spacer" aria-hidden="true"></div>
+          <svg class="network-diagram" id="feature-diagram" viewBox="0 0 860 360" role="img" aria-labelledby="feature-diagram-title feature-diagram-desc">
+            <title id="feature-diagram-title">Feature space representation diagram</title>
+            <desc id="feature-diagram-desc">A static feature-space representation mapping an input block to features and a single output.</desc>
+          </svg>
+          <p class="network-caption">Feature space representation</p>
         </div>
       </div>
-      <svg class="network-diagram" id="network-diagram" viewBox="0 0 860 360" role="img" aria-labelledby="network-diagram-title network-diagram-desc">
-        <title id="network-diagram-title">Neural network diagram</title>
-        <desc id="network-diagram-desc">A fully connected neural network with a tunable number of hidden layers.</desc>
-      </svg>
-      <p class="network-caption">Neural representation with adjustable depth</p>
     </div>
   </section>
 
@@ -202,7 +241,8 @@ skip_mathjax: true
     const slider = document.getElementById('hidden-layer-slider');
     const value = document.getElementById('hidden-layer-value');
     const svg = document.getElementById('network-diagram');
-    if (!slider || !value || !svg) return;
+    const featureSvg = document.getElementById('feature-diagram');
+    if (!slider || !value || !svg || !featureSvg) return;
 
     const svgNs = 'http://www.w3.org/2000/svg';
     function makeNode(x, y, stroke) {
@@ -241,14 +281,26 @@ skip_mathjax: true
       return node;
     }
 
-    function makeSubscriptLabel(prefix, subscript, suffix, x, y, anchor) {
+    function makeRect(x, y, width, height, stroke) {
+      const rect = document.createElementNS(svgNs, 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', width);
+      rect.setAttribute('height', height);
+      rect.setAttribute('fill', '#ffffff');
+      rect.setAttribute('stroke', stroke);
+      rect.setAttribute('stroke-width', '3');
+      return rect;
+    }
+
+    function makeSubscriptLabel(prefix, subscript, suffix, x, y, anchor, size = 18, subscriptSize = 13) {
       const text = document.createElementNS(svgNs, 'text');
       text.setAttribute('x', x);
       text.setAttribute('y', y);
       text.setAttribute('text-anchor', anchor);
       text.setAttribute('fill', '#111');
       text.setAttribute('font-family', '"Times New Roman", Georgia, serif');
-      text.setAttribute('font-size', '18');
+      text.setAttribute('font-size', String(size));
       text.setAttribute('font-style', 'italic');
 
       const prefixSpan = document.createElementNS(svgNs, 'tspan');
@@ -258,7 +310,7 @@ skip_mathjax: true
       const subscriptSpan = document.createElementNS(svgNs, 'tspan');
       subscriptSpan.textContent = subscript;
       subscriptSpan.setAttribute('baseline-shift', 'sub');
-      subscriptSpan.setAttribute('font-size', '13');
+      subscriptSpan.setAttribute('font-size', String(subscriptSize));
       text.appendChild(subscriptSpan);
 
       const suffixSpan = document.createElementNS(svgNs, 'tspan');
@@ -297,6 +349,44 @@ skip_mathjax: true
 
     function hiddenLayerCounts(hiddenLayers) {
       return Array.from({ length: hiddenLayers }, () => 6);
+    }
+
+    function renderFeatureDiagram() {
+      featureSvg.replaceChildren();
+
+      const edgeGroup = document.createElementNS(svgNs, 'g');
+      const shapeGroup = document.createElementNS(svgNs, 'g');
+      const labelGroup = document.createElementNS(svgNs, 'g');
+
+      const inputBlock = {
+        left: 108,
+        top: 185,
+        size: 22,
+        gap: 0
+      };
+      const featureX = 420;
+      const featureYs = [74, 122, 170, 218, 266, 314];
+      const output = { x: 720, y: 196 };
+
+      featureYs.forEach((y) => {
+        edgeGroup.appendChild(makeLine(inputBlock.left + inputBlock.size * 2, inputBlock.top + inputBlock.size / 2, featureX - 58, y));
+        edgeGroup.appendChild(makeLine(featureX + 70, y, output.x, output.y));
+      });
+
+      shapeGroup.appendChild(makeRect(inputBlock.left, inputBlock.top, inputBlock.size, inputBlock.size, '#111111'));
+      shapeGroup.appendChild(makeRect(inputBlock.left + inputBlock.size + inputBlock.gap, inputBlock.top, inputBlock.size, inputBlock.size, '#111111'));
+      shapeGroup.appendChild(makeNode(output.x, output.y, '#111111'));
+
+      labelGroup.appendChild(makeText('𝐱 ∈ Rᵈ', inputBlock.left + inputBlock.size, 154, 'middle', '28', '#111', true));
+      labelGroup.appendChild(makeText('f(𝐱; w) = w · Φ(𝐱)', output.x, 116, 'middle', '28', '#111', true));
+      labelGroup.appendChild(makeSubscriptLabel('φ', '1', '(x)', featureX, 70, 'middle', 28, 18));
+      labelGroup.appendChild(makeSubscriptLabel('φ', '2', '(x)', featureX, 118, 'middle', 28, 18));
+      labelGroup.appendChild(makeText('⋮', featureX, 194, 'middle', '30', '#111', false));
+      labelGroup.appendChild(makeSubscriptLabel('φ', 'N', '(x)', featureX, 310, 'middle', 28, 18));
+
+      featureSvg.appendChild(edgeGroup);
+      featureSvg.appendChild(shapeGroup);
+      featureSvg.appendChild(labelGroup);
     }
 
     function render(hiddenLayers) {
@@ -381,5 +471,6 @@ skip_mathjax: true
     });
 
     render(Number(slider.value));
+    renderFeatureDiagram();
   })();
 </script>
