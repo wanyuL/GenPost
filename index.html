@@ -74,10 +74,11 @@
   }
 
   .section-body {
-    margin: 22px 0 0;
-    font-size: 1.08rem;
-    line-height: 1.75;
+    margin: 14px 0 0;
+    font-size: 1.22rem;
+    line-height: 1.34;
     color: #2a2a2a;
+    text-align: justify;
   }
 
   .section-equation {
@@ -333,6 +334,67 @@
     overflow: hidden;
   }
 
+  .plot-toggle-group {
+    position: absolute;
+    left: 64px;
+    bottom: 50px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(17, 17, 17, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+    font-size: 0.82rem;
+    color: #4b4b4b;
+  }
+
+  .plot-toggle-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .plot-toggle-group input {
+    margin: 0;
+  }
+
+  .plot-toggle-swatch {
+    width: 18px;
+    height: 0;
+    border-top: 2.2px solid currentColor;
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .plot-toggle-swatch::after {
+    content: '';
+    position: absolute;
+    top: -3.2px;
+    left: 7px;
+    width: 4.4px;
+    height: 4.4px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .plot-toggle-label {
+    line-height: 1;
+  }
+
+  .plot-toggle-theory {
+    color: #303030;
+  }
+
+  .plot-toggle-expt {
+    color: steelblue;
+  }
+
   .generalization-frame.diagram-frame {
     padding: 4px;
   }
@@ -393,10 +455,11 @@
   <section class="post-section">
     <h2 class="section-title">Generalization overview</h2>
     <p class="section-subtitle">how neural networks predict unseen data</p>
-    <p class="section-body">Generalization error as a function of data, model, and target:</p>
+    <p class="section-body">Generalization, a central focus of deep learning, refers to the performance of a model in scenarios that extend beyond the training setting. For theoreticians, one of the most intriguing and fundamental questions is: when and why do neural networks generalize well? To approach this question, we begin with a quantitative measure of generalization--generalization error, which captures how well a model's predictions match the target function. A common definition of generalization error is the expected test mean squared error:</p>
     <div class="section-equation">
       $$\mathcal{E}_g = \left\langle \frac{1}{2} \int d\mathbf{x}\, \underbrace{\datacolor{p}(\mathbf{x})\vphantom{\dfrac{1}{1}}}_{\substack{\\[6pt]\datacolor{\text{test data}}\\\datacolor{\text{distribution}}}} \bigl(\underbrace{\modelcolor{f^*}(\mathbf{x})\vphantom{\dfrac{1}{1}}}_{\substack{\\[6pt]\modelcolor{\text{model}}}} - \underbrace{\targetcolor{f_T}(\mathbf{x})\vphantom{\dfrac{1}{1}}}_{\substack{\\[6pt]\targetcolor{\text{target}}}}\bigr)^2 \right\rangle\mkern-20mu \raise -30mu \hbox{$\scriptstyle \underbrace{\datasetcolor{\mathscr{D}}}_{\substack{\datasetcolor{\text{train}}\\\datasetcolor{\text{dataset}}}}$}$$
     </div>
+    <p class="section-body">From this formulation, we see that generalization depends on three key components: data, model, and target function. In the following sections, we will walk through an example to illustrate how these elements shape generalization performance.</p>
   </section>
 
   <section class="post-section">
@@ -497,6 +560,18 @@
         </div>
         <div class="generalization-panel">
           <div class="generalization-frame">
+            <div class="plot-toggle-group" aria-label="Curve visibility toggles for the MSE plot">
+              <label for="theoretical-mse-theory-toggle">
+                <input type="checkbox" id="theoretical-mse-theory-toggle" checked>
+                <span class="plot-toggle-swatch plot-toggle-theory" aria-hidden="true"></span>
+                <span class="plot-toggle-label">theory</span>
+              </label>
+              <label for="theoretical-mse-expt-toggle">
+                <input type="checkbox" id="theoretical-mse-expt-toggle" checked>
+                <span class="plot-toggle-swatch plot-toggle-expt" aria-hidden="true"></span>
+                <span class="plot-toggle-label">expt mean</span>
+              </label>
+            </div>
             <canvas class="plot-canvas" id="theoretical-mse-plot" aria-label="Theoretical test MSE curve for a selected target mode"></canvas>
           </div>
           <p class="network-caption" id="theoretical-mse-caption">Theoretical Test MSE for target mode k = 8</p>
@@ -524,6 +599,8 @@
     const generalizationSpectrumCanvas = document.getElementById('generalization-spectrum-plot');
     const eigenmodeCanvas = document.getElementById('eigenmode-strength-plot');
     const mseCanvas = document.getElementById('theoretical-mse-plot');
+    const mseTheoryToggle = document.getElementById('theoretical-mse-theory-toggle');
+    const mseExptToggle = document.getElementById('theoretical-mse-expt-toggle');
     const eigenmodeCaption = document.getElementById('eigenmode-strength-caption');
     const mseCaption = document.getElementById('theoretical-mse-caption');
     if (
@@ -531,6 +608,7 @@
       !generalizationSlider || !generalizationValue || !generalizationModeSlider ||
       !generalizationModeValue || !generalizationTrainSizeSlider || !generalizationTrainSizeValue ||
       !generalizationSvg || !generalizationSpectrumCanvas || !eigenmodeCanvas || !mseCanvas ||
+      !mseTheoryToggle || !mseExptToggle ||
       !eigenmodeCaption || !mseCaption
     ) return;
 
@@ -542,7 +620,8 @@
       biasVar: 0.01
     };
     const generalizationConfig = {
-      msePoints: 180
+      msePoints: 180,
+      exptTrials: 20
     };
     const colors = {
       model: 'peru',
@@ -553,6 +632,11 @@
       grid: 'rgba(17, 17, 17, 0.12)',
       label: '#4b4b4b'
     };
+    const mseCurveState = {
+      showTheory: true,
+      showExpt: true
+    };
+    const exptCurveCache = new Map();
 
     function makeNode(x, y, stroke) {
       const circle = document.createElementNS(svgNs, 'circle');
@@ -1111,6 +1195,124 @@
       return 0.5 * (lo + hi);
     }
 
+    function solveLinearSystem(matrix, rhs) {
+      const n = matrix.length;
+      if (n === 0) return [];
+
+      const augmented = matrix.map((row, index) => [...row, rhs[index]]);
+
+      for (let pivot = 0; pivot < n; pivot += 1) {
+        let maxRow = pivot;
+        for (let row = pivot + 1; row < n; row += 1) {
+          if (Math.abs(augmented[row][pivot]) > Math.abs(augmented[maxRow][pivot])) {
+            maxRow = row;
+          }
+        }
+
+        if (maxRow !== pivot) {
+          [augmented[pivot], augmented[maxRow]] = [augmented[maxRow], augmented[pivot]];
+        }
+
+        const pivotValue = Math.abs(augmented[pivot][pivot]) < 1e-10 ? 1e-10 : augmented[pivot][pivot];
+        for (let row = pivot + 1; row < n; row += 1) {
+          const factor = augmented[row][pivot] / pivotValue;
+          if (factor === 0) continue;
+          for (let column = pivot; column <= n; column += 1) {
+            augmented[row][column] -= factor * augmented[pivot][column];
+          }
+        }
+      }
+
+      const solution = Array(n).fill(0);
+      for (let row = n - 1; row >= 0; row -= 1) {
+        let value = augmented[row][n];
+        for (let column = row + 1; column < n; column += 1) {
+          value -= augmented[row][column] * solution[column];
+        }
+        const diagonal = Math.abs(augmented[row][row]) < 1e-10 ? 1e-10 : augmented[row][row];
+        solution[row] = value / diagonal;
+      }
+
+      return solution;
+    }
+
+    function createModeTarget(sampleCount, modeIndex) {
+      const rawValues = Array.from({ length: sampleCount }, (_, index) => {
+        const angle = (2 * Math.PI * index) / sampleCount;
+        return modeIndex === 0 ? 1 : Math.cos(modeIndex * angle);
+      });
+      const rms = Math.sqrt(rawValues.reduce((sum, value) => sum + value * value, 0) / Math.max(sampleCount, 1));
+      return rawValues.map((value) => value / Math.max(rms, 1e-12));
+    }
+
+    function sampleIndices(total, count, seed) {
+      const indices = Array.from({ length: total }, (_, index) => index);
+      let state = (seed + 1) >>> 0;
+
+      function nextRandom() {
+        state = (1664525 * state + 1013904223) >>> 0;
+        return state / 4294967296;
+      }
+
+      for (let i = indices.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(nextRandom() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+
+      return indices.slice(0, count);
+    }
+
+    function kernelRegressionPrediction(fullKernel, trainIndices, trainTargets, ridge = 1e-8) {
+      const trainKernel = trainIndices.map((rowIndex) =>
+        trainIndices.map((columnIndex) => fullKernel[rowIndex][columnIndex])
+      );
+      trainKernel.forEach((row, index) => {
+        row[index] += ridge;
+      });
+
+      const dualWeights = solveLinearSystem(trainKernel, trainTargets);
+      return fullKernel.map((row) =>
+        trainIndices.reduce((sum, trainIndex, index) => sum + row[trainIndex] * dualWeights[index], 0)
+      );
+    }
+
+    function computeExptMseCurve(fullKernel, modeIndex) {
+      const cacheKey = `${modeIndex}|${fullKernel.length}|${fullKernel[0]?.[0]?.toFixed?.(6) ?? '0'}`;
+      if (exptCurveCache.has(cacheKey)) {
+        return exptCurveCache.get(cacheKey);
+      }
+
+      const sampleCount = fullKernel.length;
+      const maxTrainSize = Math.min(64, sampleCount);
+      const target = createModeTarget(sampleCount, modeIndex);
+      const nValues = Array.from({ length: maxTrainSize }, (_, index) => index + 1);
+      const means = [];
+      const stds = [];
+
+      nValues.forEach((n) => {
+        const trialMses = [];
+        for (let trial = 0; trial < generalizationConfig.exptTrials; trial += 1) {
+          const trainIndices = sampleIndices(sampleCount, n, modeIndex * 1009 + n * 97 + trial);
+          const trainTargets = trainIndices.map((index) => target[index]);
+          const prediction = kernelRegressionPrediction(fullKernel, trainIndices, trainTargets);
+          const mse = prediction.reduce((sum, value, index) => {
+            const error = target[index] - value;
+            return sum + error * error;
+          }, 0) / Math.max(sampleCount, 1);
+          trialMses.push(mse);
+        }
+
+        const mean = trialMses.reduce((sum, value) => sum + value, 0) / Math.max(trialMses.length, 1);
+        const variance = trialMses.reduce((sum, value) => sum + (value - mean) * (value - mean), 0) / Math.max(trialMses.length, 1);
+        means.push(mean);
+        stds.push(Math.sqrt(variance));
+      });
+
+      const result = { nValues, means, stds };
+      exptCurveCache.set(cacheKey, result);
+      return result;
+    }
+
     function drawLegend(context, items, x, y) {
       context.font = '12px Georgia, serif';
       context.textAlign = 'left';
@@ -1235,7 +1437,7 @@
       ], width - 74, padding.top + 14);
     }
 
-    function drawTheoreticalMse(canvas, levelEigenvalues, multiplicities, modeIndex, highlightedTrainSize) {
+    function drawTheoreticalMse(canvas, levelEigenvalues, multiplicities, modeIndex, highlightedTrainSize, exptCurve) {
       const { context, width, height } = setupCanvas(canvas);
       const padding = { top: 30, right: 20, bottom: 44, left: 60 };
       const plotWidth = width - padding.left - padding.right;
@@ -1246,7 +1448,7 @@
         return Math.pow(2, 6 * fraction);
       });
       const targetCoefficients = levelEigenvalues.map((_, index) => (index === safeModeIndex ? 1 : 0));
-      const mseValues = nValues.map((n) => {
+      const theoryMseValues = nValues.map((n) => {
         const kappa = solveKappa(levelEigenvalues, multiplicities, n);
         const learnabilities = levelEigenvalues.map((lambda) => lambda / (lambda + kappa));
         const overfittingCoefficient = n / Math.max(
@@ -1264,7 +1466,16 @@
       });
 
       const xLogs = nValues.map((value) => Math.log2(value));
-      const yMax = Math.max(...mseValues, 1e-6);
+      const yCandidates = [1e-6];
+      if (mseCurveState.showTheory) {
+        yCandidates.push(...theoryMseValues);
+      }
+      if (mseCurveState.showExpt && exptCurve) {
+        exptCurve.means.forEach((value, index) => {
+          yCandidates.push(value + exptCurve.stds[index]);
+        });
+      }
+      const yMax = Math.max(...yCandidates);
       const yMin = 0;
       const xMin = xLogs[0];
       const xMax = xLogs[xLogs.length - 1];
@@ -1290,25 +1501,68 @@
       context.lineTo(padding.left + plotWidth, padding.top + plotHeight);
       context.stroke();
 
-      context.strokeStyle = '#303030';
-      context.lineWidth = 2.4;
-      context.beginPath();
-      mseValues.forEach((value, index) => {
-        const x = padding.left + ((xLogs[index] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
-        const y = padding.top + plotHeight - ((value - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
-        if (index === 0) {
-          context.moveTo(x, y);
-        } else {
+      if (mseCurveState.showExpt && exptCurve) {
+        const exptXLogs = exptCurve.nValues.map((value) => Math.log2(value));
+
+        context.fillStyle = 'rgba(70, 130, 180, 0.16)';
+        context.beginPath();
+        exptCurve.means.forEach((value, index) => {
+          const upper = value + exptCurve.stds[index];
+          const x = padding.left + ((exptXLogs[index] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+          const y = padding.top + plotHeight - ((upper - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+          if (index === 0) {
+            context.moveTo(x, y);
+          } else {
+            context.lineTo(x, y);
+          }
+        });
+        for (let index = exptCurve.means.length - 1; index >= 0; index -= 1) {
+          const lower = Math.max(0, exptCurve.means[index] - exptCurve.stds[index]);
+          const x = padding.left + ((exptXLogs[index] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+          const y = padding.top + plotHeight - ((lower - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
           context.lineTo(x, y);
         }
-      });
-      context.stroke();
+        context.closePath();
+        context.fill();
+
+        context.strokeStyle = colors.dataset;
+        context.lineWidth = 2.2;
+        context.lineJoin = 'round';
+        context.lineCap = 'round';
+        context.beginPath();
+        exptCurve.means.forEach((value, index) => {
+          const x = padding.left + ((exptXLogs[index] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+          const y = padding.top + plotHeight - ((value - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+          if (index === 0) {
+            context.moveTo(x, y);
+          } else {
+            context.lineTo(x, y);
+          }
+        });
+        context.stroke();
+      }
+
+      if (mseCurveState.showTheory) {
+        context.strokeStyle = '#303030';
+        context.lineWidth = 2.4;
+        context.beginPath();
+        theoryMseValues.forEach((value, index) => {
+          const x = padding.left + ((xLogs[index] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
+          const y = padding.top + plotHeight - ((value - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+          if (index === 0) {
+            context.moveTo(x, y);
+          } else {
+            context.lineTo(x, y);
+          }
+        });
+        context.stroke();
+      }
 
       const highlightedIndex = nValues.reduce((bestIndex, value, index) =>
         Math.abs(value - highlightedTrainSize) < Math.abs(nValues[bestIndex] - highlightedTrainSize) ? index : bestIndex,
       0);
       const highlightX = padding.left + ((xLogs[highlightedIndex] - xMin) / Math.max(xMax - xMin, 1e-9)) * plotWidth;
-      const highlightY = padding.top + plotHeight - ((mseValues[highlightedIndex] - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
+      const highlightY = padding.top + plotHeight - ((theoryMseValues[highlightedIndex] - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
 
       context.strokeStyle = 'rgba(17, 17, 17, 0.24)';
       context.setLineDash([5, 4]);
@@ -1317,11 +1571,6 @@
       context.lineTo(highlightX, padding.top + plotHeight);
       context.stroke();
       context.setLineDash([]);
-
-      context.fillStyle = colors.dataset;
-      context.beginPath();
-      context.arc(highlightX, highlightY, 4.2, 0, Math.PI * 2);
-      context.fill();
 
       context.fillStyle = colors.label;
       context.font = '13px Georgia, serif';
@@ -1350,6 +1599,7 @@
         const y = padding.top + plotHeight - ((tick - yMin) / Math.max(yMax - yMin, 1e-9)) * plotHeight;
         context.fillText(formatShortNumber(tick, 2), padding.left - 8, y);
       });
+
     }
 
     function trainSizeFromExponent(exponent) {
@@ -1460,7 +1710,7 @@
       renderNetworkDiagram(generalizationSvg, hiddenLayers, {
         bounds: { left: 128, right: 742, top: 70, bottom: 322 }
       });
-      const { sortedEigenvalues, uniqueEigenvalues, multiplicities } = computeInfiniteWidthNtk(hiddenLayers);
+      const { matrix, sortedEigenvalues, uniqueEigenvalues, multiplicities } = computeInfiniteWidthNtk(hiddenLayers);
       drawSortedSpectrum(generalizationSpectrumCanvas, sortedEigenvalues, {
         padding: { top: 30, right: 20, bottom: 44, left: 52 }
       });
@@ -1476,7 +1726,8 @@
         uniqueEigenvalues,
         multiplicities,
         modeIndex,
-        trainSize
+        trainSize,
+        computeExptMseCurve(matrix, modeIndex)
       );
       eigenmodeCaption.textContent = `Eigenmode Strength at n = ${trainSize} and target mode k = ${modeIndex}`;
       mseCaption.textContent = `Theoretical Test MSE for target mode k = ${modeIndex}`;
@@ -1500,6 +1751,16 @@
 
     generalizationTrainSizeSlider.addEventListener('input', () => {
       updateSliderFill(generalizationTrainSizeSlider);
+      renderGeneralization(Number(generalizationSlider.value));
+    });
+
+    mseTheoryToggle.addEventListener('input', () => {
+      mseCurveState.showTheory = mseTheoryToggle.checked;
+      renderGeneralization(Number(generalizationSlider.value));
+    });
+
+    mseExptToggle.addEventListener('input', () => {
+      mseCurveState.showExpt = mseExptToggle.checked;
       renderGeneralization(Number(generalizationSlider.value));
     });
 
