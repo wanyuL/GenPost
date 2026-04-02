@@ -81,6 +81,17 @@
     text-align: justify;
   }
 
+  .section-list {
+    margin: 14px 0 0 1.4rem;
+    font-size: 1.22rem;
+    line-height: 1.34;
+    color: #2a2a2a;
+  }
+
+  .section-list li + li {
+    margin-top: 10px;
+  }
+
   .section-equation {
     margin: 28px 0 0;
     padding-left: 36px;
@@ -465,6 +476,19 @@
   <section class="post-section">
     <h2 class="section-title">Into the Eigen World</h2>
     <p class="section-subtitle">spectral decomposition of neural networks as kernel machines in function space</p>
+    <p class="section-body">To better understand generalization, a simple trick is to consider a limiting setting in which an infinitely wide neural network is equivalent to kernel ridge regression (KRR), a classical statistical model that is analytically tractable.</p>
+    <p class="section-body">A kernel $K(x, x')$ is a real-valued function defined on pairs of inputs $x$ and $x'$. Given a data distribution $p(x)$, it induces an integral operator $\mathcal{T}$ acting on functions $f$, producing another function:</p>
+    <div class="section-equation">
+      $$(\mathcal T f)(x) = \int K(x,x') f(x') p(x') \, dx'.$$
+    </div>
+    <p class="section-body">The eigenfunctions $\{\phi_i\}$ and eigenvalues $\{\lambda_i\}$ of the integral operator $\mathcal T$ satisfy</p>
+    <div class="section-equation">
+      $$\int K(x,x') \phi_i(x') p(x') \, dx' = \lambda_i \phi_i(x),$$
+    </div>
+    <p class="section-body">with orthonormality: $\langle \phi_i(x)\phi_j(x) \rangle = \delta_{ij}.$ Since the eigenfunctions $\{\phi_i\}$ form a complete orthonormal basis in the function space, any target function $f_T$ and learned model predictor $f^*$ can be expanded in this eigenfunction basis as</p>
+    <div class="section-equation">
+      $$f_T(x) = \sum_i v_i \phi_i(x), \qquad f^*(x) = \sum_i \hat v_i \phi_i(x).$$
+    </div>
     <div class="network-card">
       <div class="network-figure-grid">
         <div class="network-panel">
@@ -512,6 +536,28 @@
   <section class="post-section">
     <h2 class="section-title">Mechanisms of generalization</h2>
     <p class="section-subtitle">through Eigen-learning Framework</p>
+    <p class="section-body">Expanding model and target functions in terms of the kernel eigenfunctions allow us to decompose the generalization error as a linear sum of contributions from each eigenspaces:</p>
+    <div class="section-equation">
+      $$\mathcal{E}_g = \mathbb{E}_D\!\left[ \int \left( f^*(x) - f_T(x) \right)^2 p(x)\, dx \right] = \sum_i \mathbb{E}_D\!\left[(v_i - \hat{v}_i)^2\right] := \sum_i \mathcal{E}_g^{(i)}$$
+    </div>
+    <p class="section-body">To further analyze how $\mathcal{E}_g^{(i)}$ depends on the data, model, and target function, several seminal works have approached this problem from different perspectives, including random matrix theory (Jacot et al., 2020), replica methods (Canatar et al., 2021), and conservation laws (Simon et al., 2023). For pedagogical clarity, we adopt the conservation law perspective here.</p>
+    <p class="section-body">Simon et al. showed that the modewise generalization error can be expressed as a function of learnability $L_i$:</p>
+    <div class="section-equation">
+      $$\mathcal{E}_g^{(i)} \propto (1-L_i)^2v_i^2$$
+    </div>
+    <p class="section-body">The learnability $L_i$ defined to quantify the alignment between eigenfunction $\phi_i(x)$ and the model predictor $f^*(x)$, and can be derived in close form as a monotonically decreasing function of eigenvalue $\lambda_i$:</p>
+    <div class="section-equation">
+      $$L_i := \frac{\mathbb{E}_D[\hat v_i]}{v_i}=\frac{\lambda_i}{\lambda_i + \kappa}$$
+    </div>
+    <p class="section-body">The constant $\kappa$ is determined self-consistently through the conservation law of learnability, which states that the total learnability across all eigenmodes equals the number of training samples:</p>
+    <div class="section-equation">
+      $$n=\sum_i L_i=\sum_i \frac{\lambda_i}{\lambda_i +\kappa}$$
+    </div>
+    <p class="section-body">This theory demonstrates the <strong>spectral bias</strong> of kernel regression:</p>
+    <ul class="section-list">
+      <li><em>Sample efficiency:</em> Kernel eigenfunctions associated with larger eigenvalues can be learned more efficiently, requiring fewer training samples.</li>
+      <li><em>Inductive bias:</em> Given a fixed number of training samples, components of the target function in higher-eigenvalue modes are learned preferentially and therefore generalize better.</li>
+    </ul>
     <div class="network-card">
       <div class="generalization-controls">
         <div class="network-slider-wrap">
