@@ -505,11 +505,11 @@
       \dimensioncolor{\underbrace{\color{black}{\nabla_{f_t(\mathbf{X})}\mathcal{L}}}_{\mathbb{R}^{N\times 1}}}
       \overset{\color{gray}{\text{define NTK}}}{=}-\eta\,K_t(\mathbf{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L},$$
     </div>
-    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set. The neural tangent kernel introduced by Jacot et al. is defined by the inner product of parameter gradients:</p>
+    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set. Notice that in the expansion above, the Gram matrix of the Jacobian emerges, which allows us to contract away the parameters and study the evolution in function space. This Gram matrix can be viewed as a bilinear kernel matrix. Jacot et al. (2018) first defined it as the Neural Tangent Kernel (NTK):</p>
     <div class="section-equation">
       $$K_t(x,x')
       :=
-      \nabla_\theta f_t(x)^\top\nabla_\theta f_t(x')
+      \dimensioncolor{\underbrace{\color{black}{\nabla_\theta f_t(x)^\top\nabla_\theta f_t(x')}}_{\text{Gram matrix of Jacobian}}}
       =\sum_{p=1}^{P}
       \frac{\partial f_t(x)}{\partial\theta_p}
       \frac{\partial f_t(x')}{\partial\theta_p}.$$
