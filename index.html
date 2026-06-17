@@ -474,10 +474,78 @@
   </section>
 
   <section class="post-section">
+    <h2 class="section-title">A simple limiting regime to study generalization analytically</h2>
+    <p class="section-subtitle">Wide neural network in the NTK regime $\approx$ Kernel ridge regression</p>
+    <p class="section-body">To better understand generalization, a simple trick is to consider a limiting setting in which an infinitely wide neural network is equivalent to kernel ridge regression (KRR), a classical statistical model that is analytically tractable.</p>
+    <p class="section-body">Consider a fully connected $L$-layer multilayer perceptron (MLP) with input dimension $d$, elementwise nonlinearity $\sigma$, hidden-layer widths $n_1,\ldots,n_{L-1}$, and a scalar output. For an input $\mathbf{x}\in\mathbb{R}^{d}$, the activation $h_\ell(\mathbf{x})$ at layer $\ell$ and the network output $f(\mathbf{x})$ are defined recursively as:</p>
+    <div class="section-equation">
+      $$h_0(\mathbf{x})=\mathbf{x},\qquad
+      h_{\ell+1}(\mathbf{x})=\sigma\!\left(\frac{1}{\sqrt{n_\ell}}W^{(\ell)}h_\ell(\mathbf{x})\right)
+      \quad (\ell=0,\ldots,L-1),\qquad
+      f(\mathbf{x})=\frac{1}{\sqrt{n_L}}\,w^\top h_L(\mathbf{x}).$$
+    </div>
+    <p class="section-body">We train the MLP with dataset $\mathscr{D}=\{(\mathbf{x}_i,y_i)\}_{i=1}^N$ sampled independently from the data distribution, with $y_i=f_T(\mathbf{x}_i)$. Let $\theta\in\mathbb{R}^{P\times 1}$ denote a vector collecting all trainable weights $\{W^{(0)},\ldots,W^{(L-1)},w\}$. The training loss $\mathcal{L}(\theta)$ is defined as the empirical mean squared error:</p>
+    <div class="section-equation">
+      $$\mathcal{L}(\theta)=\frac{1}{2N}\sum_{i=1}^N\bigl(f_\theta(\mathbf{x}_i)-y_i\bigr)^2.$$
+    </div>
+    <p class="section-body">In continuous time, the parameters update according to gradient descent with learning rate $\eta$:</p>
+    <div class="section-equation">
+      $$\dot{\theta}_t=-\eta\nabla_\theta\mathcal{L}(\theta_t).$$
+    </div>
+    <p class="section-body">Our goal is to find the analytical expression for the learned function $f$ after training. To track how the network output function $f$ evolves, we apply the chain rule to map the network update in parameter space to function space:</p>
+    <div class="section-equation">
+      $$\dot{f}_t(\mathcal{X})
+      =\nabla_\theta f_t(\mathcal{X})\,\dot{\theta}_t
+      =-\eta\,\nabla_\theta f_t(\mathcal{X})\nabla_\theta f_t(\mathbf{X})^\top
+      \nabla_{f_t(\mathbf{X})}\mathcal{L}
+      =-\eta\,K_t(\mathcal{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L},$$
+    </div>
+    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set, while $\mathcal{X}$ denotes any set of inputs at which we wish to evaluate the evolving function, such as $\mathbf{X}$ itself or a test input $\mathbf{x}$. The matrix $K_t$ is the neural tangent kernel introduced by Jacot et al. Defining the parameter Jacobian as $J_t(\mathcal{X})=\nabla_\theta f_t(\mathcal{X})$, the kernel is the Gram matrix of these Jacobians:</p>
+    <div class="section-equation">
+      $$K_t(\mathcal{X},\mathbf{X})
+      :=J_t(\mathcal{X})J_t(\mathbf{X})^\top
+      =\nabla_\theta f_t(\mathcal{X})\nabla_\theta f_t(\mathbf{X})^\top
+      =\sum_{p=1}^{P}
+      \frac{\partial f_t(\mathcal{X})}{\partial\theta_p}
+      \frac{\partial f_t(\mathbf{X})^\top}{\partial\theta_p},$$
+    </div>
+    <p class="section-body">where $P$ is the total number of trainable parameters.</p>
+    <p class="section-body">In the infinite-width limit, the NTK becomes stationary during training. More precisely, <a href="https://arxiv.org/abs/1902.06720">Lee et al. (2019)</a> showed that for a network of width $n$, its deviation from the kernel at initialization is bounded as $\sup_{t\geq 0}\lVert K_t-K_0\rVert_F=\mathcal{O}\!\left(1/\sqrt{n}\right)$. This deviation vanishes as $n\to\infty$, so the NTK remains fixed at its initial value throughout training:</p>
+    <div class="section-equation">
+      $$K_t\longrightarrow K_0.$$
+    </div>
+    <p class="section-body">The function-space dynamics are therefore governed by a linear ordinary differential equation that can be solved analytically. Let $K=K_0(\mathbf{X},\mathbf{X})$ be the NTK Gram matrix on the training inputs and $K_{\mathrm{test}}=K_0(\mathbf{X}_{\mathrm{test}},\mathbf{X})$ the kernel matrix between test and training inputs. Assuming zero initial output, $f_0=0$, the solutions on the training and test inputs are</p>
+    <div class="section-equation">
+      $$f_t(\mathbf{X})
+      =\left(I-e^{-\eta Kt/N}\right)\mathbf{y},$$
+      $$f_t(\mathbf{X}_{\mathrm{test}})
+      =K_{\mathrm{test}}K^{-1}
+      \left(I-e^{-\eta Kt/N}\right)\mathbf{y},$$
+    </div>
+    <p class="section-body">where $\mathbf{y}=(y_1,\ldots,y_N)^\top$. If $K$ is positive definite, then $e^{-\eta Kt/N}\to 0$ as $t\to\infty$, and the converged predictor is</p>
+    <div class="section-equation">
+      $$f_\infty(\mathbf{X})=\mathbf{y},\qquad
+      f_\infty(\mathbf{X}_{\mathrm{test}})
+      =K_{\mathrm{test}}K^{-1}\mathbf{y}.$$
+    </div>
+    <p class="section-body">The prediction at test points is exactly the ridgeless kernel regression solution, or equivalently the zero-regularization limit of kernel ridge regression (KRR), a well-studied nonparametric statistical method in function space. This equivalence allows us to study the generalization of infinite-width neural networks through the established theory of KRR.</p>
+    <p class="section-body">In practice, once the architecture and activation function are fixed, the infinite-width NTK can be computed recursively. Let $\Sigma^{(\ell)}(x,x')$ denote the covariance between the layer-$\ell$ preactivations produced by inputs $x$ and $x'$. Starting from the first-layer covariance, the limiting NTK satisfies</p>
+    <div class="section-equation">
+      $$K_\infty^{(1)}(x,x')=\Sigma^{(1)}(x,x'),$$
+      $$K_\infty^{(\ell+1)}(x,x')
+      =
+      K_\infty^{(\ell)}(x,x')\dot{\Sigma}^{(\ell+1)}(x,x')
+      +
+      \Sigma^{(\ell+1)}(x,x').$$
+    </div>
+    <p class="section-body">Here $\dot{\Sigma}^{(\ell+1)}(x,x')=\mathbb{E}_{f\sim\mathcal{N}(0,\Sigma^{(\ell)})}\!\left[\dot{\sigma}(f(x))\dot{\sigma}(f(x'))\right]$ is the covariance obtained after applying the derivative of the nonlinearity to a Gaussian pair with covariance $\Sigma^{(\ell)}$.</p>
+    <p class="section-body">For certain nonlinearities, such as ReLU or erf, the covariance terms $\Sigma^{(\ell)}$ and $\dot{\Sigma}^{(\ell)}$ have closed-form analytical expressions, so the NTK can be evaluated explicitly layer by layer. Thus the kernel appearing in the KRR solution is not arbitrary: it is determined by the network architecture and activation through this recursion.</p>
+  </section>
+
+  <section class="post-section">
     <h2 class="section-title">Into the Eigen World</h2>
     <p class="section-subtitle">spectral decomposition of neural networks as kernel machines in function space</p>
-    <p class="section-body">To better understand generalization, a simple trick is to consider a limiting setting in which an infinitely wide neural network is equivalent to kernel ridge regression (KRR), a classical statistical model that is analytically tractable.</p>
-    <p class="section-body">A kernel $K(x, x')$ is a real-valued function defined on pairs of inputs $x$ and $x'$. Given a data distribution $p(x)$, it induces an integral operator $\mathcal{T}$ acting on functions $f$, producing another function:</p>
+    <p class="section-body">The NTK $K(x, x')$ is a kernel function defined on pairs of inputs $x$ and $x'$. Given a data distribution $p(x)$, it induces an integral operator $\mathcal{T}$ acting on functions $f$, producing another function:</p>
     <div class="section-equation">
       $$(\mathcal T f)(x) = \int K(x,x') f(x') p(x') \, dx'.$$
     </div>
