@@ -7,7 +7,8 @@
         datacolor: ['{\\color{teal}{#1}}', 1],
         modelcolor: ['{\\color{peru}{#1}}', 1],
         targetcolor: ['{\\color{slateblue}{#1}}', 1],
-        datasetcolor: ['{\\color{steelblue}{#1}}', 1]
+        datasetcolor: ['{\\color{steelblue}{#1}}', 1],
+        dimensioncolor: ['{\\color{steelblue}{#1}}', 1]
       }
     },
     chtml: {
@@ -30,6 +31,7 @@
     --target-color: slateblue;
     --data-color: teal;
     --dataset-color: steelblue;
+    --dimension-color: steelblue;
     --spectrum-color: #165d52;
   }
 
@@ -492,27 +494,29 @@
     <div class="section-equation">
       $$\dot{\theta}_t=-\eta\nabla_\theta\mathcal{L}(\theta_t).$$
     </div>
-    <p class="section-body">Our goal is to find the analytical expression for the learned function $f$ after training. To track how the network output function $f$ evolves, we apply the chain rule to map the network update in parameter space to function space:</p>
+    <p class="section-body">Our goal is to find the analytical expression for the learned function $f$ after training. To track how the network output function $f$ evolves during training, we first evaluate it on the training inputs and apply the chain rule to map the network update in parameter space to function space:</p>
     <div class="section-equation">
-      $$\dot{f}_t(\mathcal{X})
-      =\nabla_\theta f_t(\mathcal{X})\,\dot{\theta}_t
-      =-\eta\,\nabla_\theta f_t(\mathcal{X})\nabla_\theta f_t(\mathbf{X})^\top
-      \nabla_{f_t(\mathbf{X})}\mathcal{L}
-      =-\eta\,K_t(\mathcal{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L},$$
+      $$\dot{f}_t(\mathbf{X})
+      \overset{\color{gray}{\text{chain rule}}}{=}
+      \dimensioncolor{\underbrace{\!\color{black}{\nabla_\theta f_t(\mathbf{X})}\!}_{\mathbb{R}^{N\times P}}}\;
+      \dimensioncolor{\underbrace{\color{black}{\dot{\theta}_t}}_{\mathbb{R}^{P\times 1}}}
+      \overset{\color{gray}{\text{gradient flow}}}{=}-\eta\,
+      \dimensioncolor{\underbrace{\color{black}{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}}_{\text{NTK}\in\mathbb{R}^{N\times N}}}
+      \dimensioncolor{\underbrace{\color{black}{\nabla_{f_t(\mathbf{X})}\mathcal{L}}}_{\mathbb{R}^{N\times 1}}}
+      \overset{\color{gray}{\text{define NTK}}}{=}-\eta\,K_t(\mathbf{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L},$$
     </div>
-    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set, while $\mathcal{X}$ denotes any set of inputs at which we wish to evaluate the evolving function, such as $\mathbf{X}$ itself or a test input $\mathbf{x}$. The matrix $K_t$ is the neural tangent kernel introduced by Jacot et al. Defining the parameter Jacobian as $J_t(\mathcal{X})=\nabla_\theta f_t(\mathcal{X})$, the kernel is the Gram matrix of these Jacobians:</p>
+    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set. The neural tangent kernel introduced by Jacot et al. is defined by the inner product of parameter gradients:</p>
     <div class="section-equation">
-      $$K_t(\mathcal{X},\mathbf{X})
-      :=J_t(\mathcal{X})J_t(\mathbf{X})^\top
-      =\nabla_\theta f_t(\mathcal{X})\nabla_\theta f_t(\mathbf{X})^\top
+      $$K_t(x,x')
+      :=
+      \nabla_\theta f_t(x)^\top\nabla_\theta f_t(x')
       =\sum_{p=1}^{P}
-      \frac{\partial f_t(\mathcal{X})}{\partial\theta_p}
-      \frac{\partial f_t(\mathbf{X})^\top}{\partial\theta_p},$$
+      \frac{\partial f_t(x)}{\partial\theta_p}
+      \frac{\partial f_t(x')}{\partial\theta_p}.$$
     </div>
-    <p class="section-body">where $P$ is the total number of trainable parameters.</p>
     <p class="section-body">In the infinite-width limit, the NTK becomes stationary during training. More precisely, <a href="https://arxiv.org/abs/1902.06720">Lee et al. (2019)</a> showed that for a network of width $n$, its deviation from the kernel at initialization is bounded as $\sup_{t\geq 0}\lVert K_t-K_0\rVert_F=\mathcal{O}\!\left(1/\sqrt{n}\right)$. This deviation vanishes as $n\to\infty$, so the NTK remains fixed at its initial value throughout training:</p>
     <div class="section-equation">
-      $$K_t\longrightarrow K_0.$$
+      $$K_t\overset{n\to\infty}{\longrightarrow} K_0.$$
     </div>
     <p class="section-body">The function-space dynamics are therefore governed by a linear ordinary differential equation that can be solved analytically. Let $K=K_0(\mathbf{X},\mathbf{X})$ be the NTK Gram matrix on the training inputs and $K_{\mathrm{test}}=K_0(\mathbf{X}_{\mathrm{test}},\mathbf{X})$ the kernel matrix between test and training inputs. Assuming zero initial output, $f_0=0$, the solutions on the training and test inputs are</p>
     <div class="section-equation">
