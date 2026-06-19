@@ -486,15 +486,15 @@
       \quad (\ell=0,\ldots,L-1),\qquad
       f(\mathbf{x})=\frac{1}{\sqrt{n_L}}\,w^\top h_L(\mathbf{x}).$$
     </div>
-    <p class="section-body">We train the MLP with dataset $\mathscr{D}=\{(\mathbf{x}_i,y_i)\}_{i=1}^N$ sampled independently from the data distribution, with $y_i=f_T(\mathbf{x}_i)$. Let $\theta\in\mathbb{R}^{P\times 1}$ denote a vector collecting all trainable weights $\{W^{(0)},\ldots,W^{(L-1)},w\}$. The training loss $\mathcal{L}(\theta)$ is defined as the empirical mean squared error:</p>
+    <p class="section-body">We train the MLP with dataset $\mathscr{D}=\{(\mathbf{x}_i,y_i)\}_{i=1}^N$ sampled independently from the data distribution, with $y_i=f_T(\mathbf{x}_i)$. Let $\theta=\operatorname{vec}\{W^{(0)},\ldots,W^{(L-1)},w\}\in\mathbb{R}^{P\times 1}$ denote the vectorization of all trainable weights. The training loss $\mathcal{L}(\theta)$ is defined as the empirical squared loss:</p>
     <div class="section-equation">
-      $$\mathcal{L}(\theta)=\frac{1}{2N}\sum_{i=1}^N\bigl(f_\theta(\mathbf{x}_i)-y_i\bigr)^2.$$
+      $$\mathcal{L}(\theta)=\frac{1}{2}\sum_{i=1}^N\bigl(f_\theta(\mathbf{x}_i)-y_i\bigr)^2.$$
     </div>
     <p class="section-body">In continuous time, the parameters update according to gradient descent with learning rate $\eta$:</p>
     <div class="section-equation">
       $$\dot{\theta}_t=-\eta\nabla_\theta\mathcal{L}(\theta_t).$$
     </div>
-    <p class="section-body">Our goal is to find the analytical expression for the learned function $f$ after training. To track how the network output function $f$ evolves during training, we first evaluate it on the training inputs and apply the chain rule to map the network update in parameter space to function space:</p>
+    <p class="section-body">Our goal is to find the analytical expression for the learned function $f$ after training. To track how the network output function $f$ evolves during training, we first evaluate it on the training inputs and apply the chain rule to transform gradient flow in parameter space into dynamics in function space:</p>
     <div class="section-equation">
       $$\dot{f}_t(\mathbf{X})
       \overset{\color{gray}{\text{chain rule}}}{=}
@@ -503,36 +503,37 @@
       \overset{\color{gray}{\text{gradient flow}}}{=}-\eta\,
       \dimensioncolor{\underbrace{\color{black}{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}}_{\text{NTK}\in\mathbb{R}^{N\times N}}}
       \dimensioncolor{\underbrace{\color{black}{\nabla_{f_t(\mathbf{X})}\mathcal{L}}}_{\mathbb{R}^{N\times 1}}}
-      \overset{\color{gray}{\text{define NTK}}}{=}-\eta\,K_t(\mathbf{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L},$$
+      \overset{\color{gray}{\text{define NTK}}}{=}-\eta\,K_t(\mathbf{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L}.$$
     </div>
-    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set. Notice that in the expansion above, the Gram matrix of the Jacobian emerges, which allows us to contract away the parameters and study the evolution in function space. This Gram matrix can be viewed as a bilinear kernel matrix. Jacot et al. (2018) first defined it as the Neural Tangent Kernel (NTK):</p>
+    <p class="section-body">Here $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ is the training set. The key object that appears in the above expansion is the Gram matrix of the Jacobian, which can be naturally viewed as a kernel function evaluated on the training data pairs. Jacot et al. (2018) first termed this kernel the Neural Tangent Kernel (NTK):</p>
     <div class="section-equation">
-      $$K_t(x,x')
+      $$K_t(\mathbf{x},\mathbf{x}')
       :=
-      \dimensioncolor{\underbrace{\color{black}{\nabla_\theta f_t(x)^\top\nabla_\theta f_t(x')}}_{\text{Gram matrix of Jacobian}}}
+      \nabla_\theta f_t(\mathbf{x})^\top\nabla_\theta f_t(\mathbf{x}')
       =\sum_{p=1}^{P}
-      \frac{\partial f_t(x)}{\partial\theta_p}
-      \frac{\partial f_t(x')}{\partial\theta_p}.$$
+      \frac{\partial f_t(\mathbf{x})}{\partial\theta_p}
+      \frac{\partial f_t(\mathbf{x}')}{\partial\theta_p}.$$
     </div>
-    <p class="section-body">In the infinite-width limit, the NTK becomes stationary during training. More precisely, <a href="https://arxiv.org/abs/1902.06720">Lee et al. (2019)</a> showed that for a network of width $n$, its deviation from the kernel at initialization is bounded as $\sup_{t\geq 0}\lVert K_t-K_0\rVert_F=\mathcal{O}\!\left(1/\sqrt{n}\right)$. This deviation vanishes as $n\to\infty$, so the NTK remains fixed at its initial value throughout training:</p>
+    <p class="section-body">If we let all hidden-layer widths $n_\ell\to\infty$, initialize the weights as $W_{ij}^{(\ell)}\sim\mathcal{N}(0,1)$, and use a small learning rate, the NTK converges to a deterministic kernel at initialization and remains constant throughout training. More precisely, <a href="https://arxiv.org/abs/1902.06720">Lee et al. (2019)</a> showed that for a network of width $n$, its deviation from the kernel at initialization is bounded as $\sup_{t\geq 0}\lVert K_t-K_0\rVert_F=\mathcal{O}\!\left(1/\sqrt{n}\right)$. This deviation vanishes as $n\to\infty$, so the NTK remains fixed at its initial value throughout training:</p>
     <div class="section-equation">
       $$K_t\overset{n\to\infty}{\longrightarrow} K_0.$$
     </div>
-    <p class="section-body">The function-space dynamics are therefore governed by a linear ordinary differential equation that can be solved analytically. Let $K=K_0(\mathbf{X},\mathbf{X})$ be the NTK Gram matrix on the training inputs and $K_{\mathrm{test}}=K_0(\mathbf{X}_{\mathrm{test}},\mathbf{X})$ the kernel matrix between test and training inputs. Assuming zero initial output, $f_0=0$, the solutions on the training and test inputs are</p>
+    <p class="section-body">The function-space dynamics are therefore governed by a linear ordinary differential equation that can be solved analytically. Let $K=K_0(\mathbf{X},\mathbf{X})$ be the NTK Gram matrix on the training inputs. For one test input $\mathbf{x}_{\mathrm{test}}$, define the test-kernel vector $k_{\mathrm{test}}=K_0(\mathbf{X},\mathbf{x}_{\mathrm{test}})=\bigl[K_0(\mathbf{x}_1,\mathbf{x}_{\mathrm{test}}),\ldots,K_0(\mathbf{x}_N,\mathbf{x}_{\mathrm{test}})\bigr]^\top\in\mathbb{R}^{N\times1}$.</p>
+    <p class="section-body">Assuming zero initial output, $f_0=0$, the solutions on the training inputs and at the test point are</p>
     <div class="section-equation">
       $$f_t(\mathbf{X})
-      =\left(I-e^{-\eta Kt/N}\right)\mathbf{y},$$
-      $$f_t(\mathbf{X}_{\mathrm{test}})
-      =K_{\mathrm{test}}K^{-1}
-      \left(I-e^{-\eta Kt/N}\right)\mathbf{y},$$
+      =\left(I-e^{-\eta Kt}\right)\mathbf{y},$$
+      $$f_t(\mathbf{x}_{\mathrm{test}})
+      =k_{\mathrm{test}}^\top K^{-1}
+      \left(I-e^{-\eta Kt}\right)\mathbf{y},$$
     </div>
-    <p class="section-body">where $\mathbf{y}=(y_1,\ldots,y_N)^\top$. If $K$ is positive definite, then $e^{-\eta Kt/N}\to 0$ as $t\to\infty$, and the converged predictor is</p>
+    <p class="section-body">where $\mathbf{y}=(y_1,\ldots,y_N)^\top$. If $K$ is positive definite, then $e^{-\eta Kt}\to 0$ as $t\to\infty$, and the converged predictor is</p>
     <div class="section-equation">
       $$f_\infty(\mathbf{X})=\mathbf{y},\qquad
-      f_\infty(\mathbf{X}_{\mathrm{test}})
-      =K_{\mathrm{test}}K^{-1}\mathbf{y}.$$
+      f_\infty(\mathbf{x}_{\mathrm{test}})
+      =k_{\mathrm{test}}^\top K^{-1}\mathbf{y}.$$
     </div>
-    <p class="section-body">The prediction at test points is exactly the ridgeless kernel regression solution, or equivalently the zero-regularization limit of kernel ridge regression (KRR), a well-studied nonparametric statistical method in function space. This equivalence allows us to study the generalization of infinite-width neural networks through the established theory of KRR.</p>
+    <p class="section-body">The prediction at the test point is exactly the ridgeless kernel regression solution, or equivalently the zero-regularization limit of kernel ridge regression (KRR), a well-studied nonparametric statistical method in function space. This equivalence allows us to study the generalization of infinite-width neural networks through the established theory of KRR.</p>
     <p class="section-body">In practice, once the architecture and activation function are fixed, the infinite-width NTK can be computed recursively. Let $\Sigma^{(\ell)}(x,x')$ denote the covariance between the layer-$\ell$ preactivations produced by inputs $x$ and $x'$. Starting from the first-layer covariance, the limiting NTK satisfies</p>
     <div class="section-equation">
       $$K_\infty^{(1)}(x,x')=\Sigma^{(1)}(x,x'),$$
