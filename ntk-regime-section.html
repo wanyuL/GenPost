@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NTK Regime Section</title>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      macros: {
+        datacolor: ['{\\color{teal}{#1}}', 1],
+        modelcolor: ['{\\color{peru}{#1}}', 1],
+        targetcolor: ['{\\color{slateblue}{#1}}', 1],
+        datasetcolor: ['{\\color{steelblue}{#1}}', 1],
+        dimensioncolor: ['{\\color{gray}{#1}}', 1]
+      }
+    },
+    svg: {
+      fontCache: 'global'
+    },
+    startup: {
+      ready: () => {
+        MathJax.startup.defaultReady();
+        console.log('MathJax is ready');
+        window.mathJaxReady = true;
+      }
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+  :root {
+    --model-color: peru;
+    --target-color: slateblue;
+    --data-color: teal;
+    --dataset-color: steelblue;
+    --dimension-color: gray;
+    --spectrum-color: #165d52;
+  }
+
+  .post-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 56px 28px 88px;
+  }
+
+  .post-title {
+    margin: 0 0 56px;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #111;
+  }
+
+  .post-section {
+    margin-top: 88px;
+  }
+
+  .post-section:first-of-type {
+    margin-top: 0;
+  }
+
+  .section-title {
+    margin: 0 0 4px;
+    font-size: clamp(1.55rem, 2.5vw, 2.2rem);
+    line-height: 1.12;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .section-subtitle {
+    margin: 0;
+    font-size: 1.28rem;
+    line-height: 1.7;
+    font-style: italic;
+    color: #777;
+    padding-left: 36px;
+  }
+
+  .section-body {
+    margin: 14px 0 0;
+    font-size: 1.22rem;
+    line-height: 1.34;
+    color: #2a2a2a;
+    text-align: justify;
+  }
+
+  .paragraph-label {
+    color: #92A7D6;
+  }
+
+  a,
+  a:link,
+  a:visited,
+  a:active {
+    color: #6C739C;
+  }
+
+  a:hover {
+    color: #92A7D6;
+  }
+
+  .section-list {
+    margin: 14px 0 0 1.4rem;
+    font-size: 1.22rem;
+    line-height: 1.34;
+    color: #2a2a2a;
+  }
+
+  .section-list li + li {
+    margin-top: 10px;
+  }
+
+  .section-equation {
+    margin: 28px 0 0;
+    padding-left: 36px;
+    color: #111;
+    font-size: 1.2rem;
+  }
+
+  .network-card {
+    margin-top: 28px;
+    padding: 28px;
+    border: 1px solid #d8d8d8;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06);
+  }
+
+  .network-figure-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .network-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .network-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .network-slider-wrap {
+    min-width: min(100%, 260px);
+  }
+
+  .network-slider-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    font-size: 0.92rem;
+    color: #333;
+  }
+
+  .network-slider-label strong {
+    font-size: 1.25rem;
+    color: #111;
+  }
+
+  .network-slider-label sup {
+    font-size: 0.62em;
+    line-height: 0;
+  }
+
+  .label-model {
+    color: var(--model-color);
+  }
+
+  .label-target {
+    color: var(--target-color);
+  }
+
+  .label-data {
+    color: var(--dataset-color);
+  }
+
+  #generalization-hidden-layer-slider {
+    --slider-fill: var(--model-color);
+  }
+
+  #generalization-mode-slider {
+    --slider-fill: var(--target-color);
+  }
+
+  #generalization-train-size-slider {
+    --slider-fill: var(--dataset-color);
+  }
+
+  .network-slider {
+    width: 100%;
+    accent-color: #111;
+  }
+
+  #generalization-hidden-layer-slider,
+  #generalization-mode-slider,
+  #generalization-train-size-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      var(--slider-fill) 0%,
+      var(--slider-fill) var(--slider-percent, 50%),
+      rgba(17, 17, 17, 0.16) var(--slider-percent, 50%),
+      rgba(17, 17, 17, 0.16) 100%
+    );
+    outline: none;
+  }
+
+  #generalization-hidden-layer-slider::-webkit-slider-runnable-track,
+  #generalization-mode-slider::-webkit-slider-runnable-track,
+  #generalization-train-size-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: transparent;
+    border-radius: 999px;
+  }
+
+  #generalization-hidden-layer-slider::-webkit-slider-thumb,
+  #generalization-mode-slider::-webkit-slider-thumb,
+  #generalization-train-size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -4px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: var(--slider-fill);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  }
+
+  #generalization-hidden-layer-slider::-moz-range-track,
+  #generalization-mode-slider::-moz-range-track,
+  #generalization-train-size-slider::-moz-range-track {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(17, 17, 17, 0.16);
+  }
+
+  #generalization-hidden-layer-slider::-moz-range-progress,
+  #generalization-mode-slider::-moz-range-progress,
+  #generalization-train-size-slider::-moz-range-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--slider-fill);
+  }
+
+  #generalization-hidden-layer-slider::-moz-range-thumb,
+  #generalization-mode-slider::-moz-range-thumb,
+  #generalization-train-size-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: var(--slider-fill);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  }
+
+  .network-diagram {
+    width: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .feature-panel-spacer {
+    height: 70px;
+    flex: 0 0 auto;
+  }
+
+  .network-caption {
+    margin: 18px 0 0;
+    min-height: 2.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #5a5a5a;
+    letter-spacing: 0.02em;
+  }
+
+  .plot-figure-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+    margin-top: 26px;
+    padding-top: 26px;
+    border-top: 1px solid #e5e5e5;
+  }
+
+  .plot-panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .plot-frame {
+    position: relative;
+    width: min(100%, 340px);
+    height: 300px;
+    border: 1px solid #d7d7d7;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+    overflow: hidden;
+  }
+
+  .plot-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .generalization-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+    margin-top: 28px;
+  }
+
+  .generalization-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: end;
+  }
+
+  .generalization-panel {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: 320px 3.2em;
+    align-items: start;
+    height: 100%;
+  }
+
+  .generalization-panel .network-caption {
+    height: 3.2em;
+    align-items: flex-start;
+  }
+
+  .generalization-frame {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    box-sizing: border-box;
+    border: 1px solid #d7d7d7;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+    overflow: hidden;
+  }
+
+  .plot-toggle-group {
+    position: absolute;
+    left: 64px;
+    bottom: 50px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(17, 17, 17, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+    font-size: 0.82rem;
+    color: #4b4b4b;
+  }
+
+  .plot-toggle-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .plot-toggle-group input {
+    margin: 0;
+  }
+
+  .plot-toggle-swatch {
+    width: 18px;
+    height: 0;
+    border-top: 2.2px solid currentColor;
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .plot-toggle-swatch::after {
+    content: '';
+    position: absolute;
+    top: -3.2px;
+    left: 7px;
+    width: 4.4px;
+    height: 4.4px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .plot-toggle-label {
+    line-height: 1;
+  }
+
+  .plot-toggle-theory {
+    color: #303030;
+  }
+
+  .plot-toggle-expt {
+    color: steelblue;
+  }
+
+  .generalization-frame.diagram-frame {
+    padding: 4px;
+  }
+
+  .generalization-diagram {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1100px) {
+    .generalization-controls {
+      grid-template-columns: 1fr;
+    }
+
+    .generalization-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .post-shell {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .section-subtitle,
+    .section-equation {
+      padding-left: 20px;
+    }
+
+    .network-card {
+      padding: 20px 16px;
+      border-radius: 22px;
+    }
+
+    .network-figure-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .plot-figure-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .generalization-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="post-shell">
+<section class="post-section">
+    <h2 class="section-title">A simple limiting regime for studying generalization analytically</h2>
+    <p class="section-subtitle">Wide neural network in the NTK regime $\approx$ Kernel regression</p>
+    <p class="section-body">To better understand generalization, one useful approach is to consider a limiting setting in which a wide neural network becomes equivalent to kernel regression, a classical and analytically tractable statistical model.</p>
+    <p class="section-body"><strong class="paragraph-label">[Setup]</strong> Consider a fully connected $L$-layer multilayer perceptron (MLP) with input dimension $d$, elementwise nonlinearity $\sigma$, hidden-layer widths $n_1,\ldots,n_{L-1}$, and a scalar output. For an input $\mathbf{x}\in\mathbb{R}^{d}$, the activation $h_\ell(\mathbf{x})$ at layer $\ell$ and the network output $f(\mathbf{x})$ are defined recursively as:</p>
+    <div class="section-equation">
+      $$h_0(\mathbf{x})=\mathbf{x},\qquad
+      h_{\ell+1}(\mathbf{x})=\sigma\!\left(\frac{1}{\sqrt{n_\ell}}W^{(\ell)}h_\ell(\mathbf{x})\right)
+      \quad (\ell=0,\ldots,L-1),\qquad
+      f(\mathbf{x})=\frac{1}{\sqrt{n_L}}\,w^\top h_L(\mathbf{x}).$$
+    </div>
+    <p class="section-body">We train the MLP with dataset $\mathscr{D}=\{(\mathbf{x}_i,y_i)\}_{i=1}^N$ sampled independently from the data distribution, with $y_i=f_T(\mathbf{x}_i)$. Denote $\mathbf{X}=\{\mathbf{x}_1,\ldots,\mathbf{x}_N\}$ as the training inputs, $\mathbf{y}=(y_1,\ldots,y_N)^\top$ as the corresponding target vector, and $\theta=\operatorname{vec}\{W^{(0)},\ldots,W^{(L-1)},w\}\in\mathbb{R}^{P\times 1}$ as the vectorization of all trainable weights. The training loss $\mathcal{L}(\theta)$ is defined as the empirical squared loss:</p>
+    <div class="section-equation">
+      $$\mathcal{L}(\theta)=\frac{1}{2}\left\lVert f_\theta(\mathbf{X})-\mathbf{y}\right\rVert_2^2.$$
+    </div>
+    <p class="section-body">In continuous time, the parameters update according to gradient descent with learning rate $\eta$:</p>
+    <div class="section-equation">
+      $$\dot{\theta}_t=-\eta\nabla_\theta\mathcal{L}(\theta_t).$$
+    </div>
+    <p class="section-body"><strong class="paragraph-label">[Training Dynamics]</strong> Our goal is to find the analytical expression for the learned function $f$ after training. To track how the network output function $f$ evolves during training, we first evaluate it on the training inputs $\mathbf{X}$. Apply the chain rule to transform gradient flow in parameter space into dynamics in function space:</p>
+    <div class="section-equation">
+      $$\dot{f}_t(\mathbf{X})
+      \overset{\color{gray}{\text{chain rule}}}{=}
+      \dimensioncolor{\underbrace{\!\vphantom{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}\color{black}{\nabla_\theta f_t(\mathbf{X})}\!}_{\mathbb{R}^{N\times P}}}\;
+      \dimensioncolor{\underbrace{\vphantom{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}\color{black}{\dot{\theta}_t}}_{\substack{\\[-9pt]\mathbb{R}^{P\times 1}}}}
+      \overset{\color{gray}{\text{gradient flow}}}{=}-\eta\,
+      \dimensioncolor{\underbrace{\vphantom{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}\rule[-3pt]{0pt}{0pt}\mkern-3mu\color{black}{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}\mkern-3mu}_{\text{NTK}\in\mathbb{R}^{N\times N}}}
+      \hspace{0.35em}\dimensioncolor{\underbrace{\vphantom{\nabla_\theta f_t(\mathbf{X})\nabla_\theta f_t(\mathbf{X})^\top}\mkern-3mu\color{black}{\nabla_{f_t(\mathbf{X})}\mathcal{L}}\mkern-3mu}_{\substack{\\[-2pt]\mathbb{R}^{N\times 1}}}}
+      \overset{\color{gray}{\text{define NTK}}}{=}-\eta\,K_t(\mathbf{X},\mathbf{X})\nabla_{f_t(\mathbf{X})}\mathcal{L}.$$
+    </div>
+    <p class="section-body"><strong class="paragraph-label">[NTK]</strong> The key object that appears in the expansion above is the Gram matrix of the Jacobian, which can be interpreted as a kernel function evaluated on pairs of training data. A kernel is a function that takes two inputs and returns a scalar similarity measure. It can be written as an inner product between feature vectors $\phi$: $K(\mathbf{x},\mathbf{x}')=\langle \phi(\mathbf{x}), \phi(\mathbf{x}') \rangle$. In our case, the feature map is the Jacobian $\phi(\mathbf{x})=\nabla_\theta f_t(\mathbf{x})$, and the resulting kernel was first defined as the Neural Tangent Kernel (NTK) by <a href="https://arxiv.org/abs/1806.07572">Jacot et al. (2018)</a>:</p>
+    <div class="section-equation">
+      $$K_t(\mathbf{x},\mathbf{x}')
+      :=
+      \dimensioncolor{\underbrace{\vphantom{\nabla_\theta f_t(\mathbf{x})^\top}\color{black}{\nabla_\theta f_t(\mathbf{x})^\top}}_{\mathbb{R}^{1\times P}}}
+      \hspace{0.25em}\dimensioncolor{\underbrace{\vphantom{\nabla_\theta f_t(\mathbf{x})^\top}\color{black}{\nabla_\theta f_t(\mathbf{x}')}}_{\mathbb{R}^{P\times1}}}
+      =\sum_{p=1}^{P}
+      \frac{\partial f_t(\mathbf{x})}{\partial\theta_p}
+      \frac{\partial f_t(\mathbf{x}')}{\partial\theta_p}.$$
+    </div>
+    <p class="section-body">If we let all hidden-layer widths $n_\ell\to\infty$, initialize the weights as $W_{ij}^{(\ell)}\sim\mathcal{N}(0,1)$, and use a small learning rate, the NTK converges to a deterministic kernel at initialization and remains constant throughout training (<a href="https://arxiv.org/abs/1806.07572"> Jacot et al., 2018 </a>; <a href="https://arxiv.org/abs/1902.06720"> Lee et al., 2019 </a>). This setting, in which the NTK remains stationary during training, is often referred to as the NTK regime, or lazy regime. The $1/\sqrt{n_\ell}$ scaling in the network preactivations is key to lazy learning: under this parameterization, the kernel's deviation from its initialization is bounded as $\sup_{t\geq 0}\lVert K_t-K_0\rVert_F=\mathcal{O}\!\left(1/\sqrt{n}\right)$. This deviation vanishes as $n\to\infty$, so the NTK remains fixed at its initial value throughout training:</p>
+    <div class="section-equation">
+      $$K_t\overset{n\to\infty}{\longrightarrow} K_0.$$
+    </div>
+    <p class="section-body"><strong class="paragraph-label">[Solving the Dynamics with Stationary NTK]</strong> With the fixed NTK, the function-space dynamics therefore reduce to linear ordinary differential equations that can be solved analytically. Denote $K=K_0(\mathbf{X},\mathbf{X})$ as the stationary NTK Gram matrix on the training inputs. Since the weights are initialized from a mean-zero Gaussian distribution, the network function $f$ at initialization converges to a mean-zero Gaussian process. For simplicity, we study the centered dynamics and take $f_0=0$.</p>
+    <p class="section-body">The training dynamics are solved as:</p>
+    <div class="section-equation">
+      $$\dot f_t(\mathbf{X})
+      =
+      -\eta K\nabla_{f_t(\mathbf{X})}\mathcal{L}
+      \quad\overset{\color{gray}{\nabla_{f_t(\mathbf{X})}\mathcal{L}=f_t(\mathbf{X})-\mathbf{y}}}{\Longrightarrow}\quad
+      \dot f_t(\mathbf{X})
+      =
+      -\eta K\bigl(f_t(\mathbf{X})-\mathbf{y}\bigr)
+      \quad\Longrightarrow\quad
+      f_t(\mathbf{X})
+      =
+      \left(I-e^{-\eta Kt}\right)\mathbf{y}.$$
+    </div>
+    <p class="section-body">The dynamics for a test input $\mathbf{x}_{\mathrm{test}}$ are solved as:</p>
+    <div class="section-equation">
+      $$\dot f_t(\mathbf{x}_{\mathrm{test}})
+      =
+      -\eta k_{\mathrm{test}}^\top\bigl(f_t(\mathbf{X})-\mathbf{y}\bigr)
+      \quad\Longrightarrow\quad
+      f_t(\mathbf{x}_{\mathrm{test}})
+      =
+      \eta k_{\mathrm{test}}^\top\int_0^t e^{-\eta Ks}\,ds\,\mathbf{y}
+      \quad\overset{\color{gray}{\eta\int_0^t e^{-\eta Ks}\,ds=K^{-1}\left(I-e^{-\eta Kt}\right)}}{\Longrightarrow}\quad
+      f_t(\mathbf{x}_{\mathrm{test}})
+      =
+      k_{\mathrm{test}}^\top K^{-1}
+      \left(I-e^{-\eta Kt}\right)\mathbf{y},$$
+    </div>
+    <p class="section-body">where the test-kernel vector $k_{\mathrm{test}}=K_0(\mathbf{X},\mathbf{x}_{\mathrm{test}})=\bigl[K_0(\mathbf{x}_1,\mathbf{x}_{\mathrm{test}}),\ldots,K_0(\mathbf{x}_N,\mathbf{x}_{\mathrm{test}})\bigr]^\top\in\mathbb{R}^{N\times1}$.</p>
+    <p class="section-body"><strong class="paragraph-label">[Learned Predictor = Kernel Regression Solution]</strong> If $K$ is positive definite, then $e^{-\eta Kt}\to \mathbf{0}$ as $t\to\infty$. The converged predictor therefore satisfies</p>
+    <div class="section-equation">
+      $$f_\infty(\mathbf{X})=\mathbf{y},\qquad
+      f_\infty(\mathbf{x}_{\mathrm{test}})
+      =k_{\mathrm{test}}^\top K^{-1}\mathbf{y}.$$
+    </div>
+    <p class="section-body">The prediction at the test point exactly matches the ridgeless kernel regression solution, or equivalently the zero-regularization limit of kernel ridge regression (KRR), a well-studied nonparametric statistical method in function space. This equivalence allows us to approximate the behavior of a wide MLP using KRR and analyze its generalization through the established theory of kernel methods.</p>
+  </section>
+  </main>
+</body>
+</html>
